@@ -31,11 +31,13 @@ namespace BusinessLibrary.DAL
                     i = i + tsql.ExecuteNonQuery(sql2, pams);
                 }
             }
-            DBStaticHelper.ExecuteScalar(CommandType.Text, "select * from ddd");
-            DBStaticHelper.CreateParameter("@aaa", 1);
-            //DBStaticHelper
-          //  DBStaticHelper.ExecuteNonQuery
             return i;
+        }
+        public void UpdateLogin(string username)
+        {
+            string sql = "update T_user set abs";
+            IDbDataParameter p = DBStaticHelper.CreateParameter("@abc", 1);
+            DBStaticHelper.ExecuteNonQuery(CommandType.Text, sql, p);
         }
     }
 }
