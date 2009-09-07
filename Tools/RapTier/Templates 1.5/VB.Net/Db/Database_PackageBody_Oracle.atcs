@@ -1,0 +1,412 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+----------------------------------------------------------
+-- Oracle Package Body for the '<#= Database.CodeName #>' database
+-- Generator: RapTier http://www.SharpPower.com
+
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "-- "); ##>
+----------------------------------------------------------
+<#	if(0 < Database.Tables.Count)
+	{ ##>
+
+
+CREATE OR REPLACE PACKAGE BODY <#= GetPackageName(Database.Tables[0]) #> AS
+<#	foreach(ITable table in Database.Tables)
+	{ ##>
+
+	------------------------------------------------------
+	-- Stored procedures for the '<#= table.Name #>' table.
+	------------------------------------------------------
+
+	-- Gets all records from the '<#= table.Name #>' table.
+	PROCEDURE <#= GetGetAllProcName(table, false) #>
+	(
+		o_cursor OUT <#= GetCursorTypeName(table) #> 
+	)
+	AS
+	BEGIN
+		OPEN o_cursor FOR SELECT * FROM <#= GetFullTableName(table) #>;
+	END;
+<#	if(GetHasPrimaryKey(table))
+	{ ##>
+
+	-- Gets a record from the '<#= table.Name #>' table using the primary key value.
+	PROCEDURE <#= GetGetByKeyProcName(table, false) #>
+	(
+<#		foreach(IColumn column in table.Columns.GetPrimaryColumns())
+		{ ##>
+		<#= GetSqlParameterName(column) #> <#= GetSqlParameterType(column) ##>,
+<#		} ##>
+		o_cursor OUT <#= GetCursorTypeName(table) #> 
+	)
+	AS
+	BEGIN
+		OPEN o_cursor FOR SELECT * FROM <#= GetFullTableName(table) #> WHERE
+<#		bool firstGetByPKItem = true;
+		foreach(IColumn column in table.Columns.GetPrimaryColumns())
+		{
+			if(firstGetByPKItem)
+				firstGetByPKItem = false;
+			else
+			{ ##> AND
+<#			} ##>
+			<#= GetSqlName(column.Name) #> = <#= GetSqlParameterName(column) ##>
+<#		} #>;
+	END;
+<#	} ##>
+<#	foreach(IRelation relation in table.ParentRelations)
+	{ ##>
+
+	-- Gets all records for the specified foreign key.
+	PROCEDURE <#= GetGetByForeignKeyProcName(relation, false) #>
+	(
+<#		foreach(IColumn column in relation.ChildColumns)
+		{ ##>
+		<#= GetSqlParameterName(column) #> <#= GetSqlParameterType(column) ##>,
+<#		} ##>
+		o_cursor OUT <#= GetCursorTypeName(table) #>
+	)
+	AS
+	BEGIN
+<#	if(1 == relation.ChildColumns.Length)
+	{ 
+		IColumn column = relation.ChildColumns[0];
+		if(column.Nullable)
+		{ ##>
+		IF <#= GetSqlParameterName(column) ##> IS NULL THEN
+			OPEN o_cursor FOR SELECT * FROM <#= GetFullTableName(table) #> WHERE <#= GetSqlName(column.Name) #> IS NULL;
+		ELSE
+	<# /* Need for indent */ ##>
+<#		} ##>
+		OPEN o_cursor FOR SELECT * FROM <#= GetFullTableName(table) #> WHERE <#= GetSqlName(column.Name) #> = <#= GetSqlParameterName(column) #>;
+<#		if(column.Nullable)
+		{ ##>
+		END IF;
+<#		} ##>
+<#	}
+	else	// More than 1 column in the foreign key. Use dynamic SQL.
+	{ ##>
+		OPEN o_cursor FOR SELECT * FROM <#= GetFullTableName(table) #> WHERE
+<#		bool firstGetByFKItem = true;
+		foreach(IColumn column in relation.ChildColumns)
+		{
+			if(firstGetByFKItem)
+				firstGetByFKItem = false;
+			else
+			{ ##> AND
+<#			} ##>
+		<#= GetSqlName(column.Name) #> = <#= GetSqlParameterName(column) ##>
+<#		} #>;
+<#	} ##>
+	END;
+<#	} ##>
+<#	if(table.Updatable)
+	{
+		if(0 < table.Columns.GetWriteableColumns().Length)
+		{ ##>
+
+	-- Inserts a new record into the '<#= table.Name #>' table.
+	PROCEDURE <#= GetInsertProcName(table, false) #>
+	(
+<#	bool firstInsertColumn = true;
+	foreach(IColumn column in table.Columns.GetWriteableColumns())
+	{
+		if(firstInsertColumn)
+			firstInsertColumn = false;
+		else
+		{ ##>,
+<#		} ##>
+		<#= GetSqlParameterName(column) #> <#= GetSqlParameterType(column) ##>
+<#	} #>
+	)
+	AS
+	BEGIN
+		INSERT INTO <#= GetFullTableName(table) #>
+		(
+<#	firstInsertColumn = true;
+	foreach(IColumn column in table.Columns.GetWriteableColumns())
+	{
+		if(firstInsertColumn)
+			firstInsertColumn = false;
+		else
+		{ ##>,
+<#		} ##>
+			<#= GetSqlName(column.Name) ##>
+<#	} #>
+		)
+		VALUES
+		(
+<#	firstInsertColumn = true;
+	foreach(IColumn column in table.Columns.GetWriteableColumns())
+	{
+		if(firstInsertColumn)
+			firstInsertColumn = false;
+		else
+		{ ##>,
+<#		} ##>
+			<#= GetSqlParameterName(column) ##>
+<#	} #>
+		);
+	END;
+<#		} // End of if(0 < table.Columns.GetWriteableColumns().Length) ##>
+<#	if(GetHasPrimaryKey(table))
+	{ 
+		if(0 < table.Columns.GetWriteableNonPrimaryColumns().Length)
+		{ ##>
+
+	-- Updates a record in the '<#= table.Name #>' table.
+	PROCEDURE <#= GetUpdateProcName(table, false) #>
+	(
+		-- Parameters for updateable non-primary key columns
+<#	foreach(IColumn column in table.Columns.GetWriteableNonPrimaryColumns())
+	{ ##>
+		<#= GetSqlParameterName(column) #> <#= GetSqlParameterType(column) #>,
+<#	} ##>
+		-- Primary key parameters
+<#	bool firstUpdateColumn = true;
+	foreach(IColumn column in table.Columns.GetPrimaryColumns())
+	{ 
+		if(firstUpdateColumn)
+			firstUpdateColumn = false;
+		else
+		{ ##>,
+<#		} ##>
+		<#= GetSqlParameterName(column) #> <#= GetSqlParameterType(column) ##>
+<#	} #>
+	)
+	AS
+	BEGIN
+		UPDATE <#= GetFullTableName(table) #> SET
+<#	firstUpdateColumn = true;
+	foreach(IColumn column in table.Columns.GetWriteableNonPrimaryColumns())
+	{ 
+		if(firstUpdateColumn)
+			firstUpdateColumn = false;
+		else
+		{ ##>,
+<#		} ##>
+			<#= GetSqlName(column.Name) #> = <#= GetSqlParameterName(column) ##>
+<#	} #>
+		WHERE
+<#	firstUpdateColumn = true;
+	foreach(IColumn column in table.Columns.GetPrimaryColumns())
+	{
+		if(firstUpdateColumn)
+			firstUpdateColumn = false;
+		else
+		{ ##> AND
+<#		} ##>
+			<#= GetSqlName(column.Name) #> = <#= GetSqlParameterName(column) ##>
+<#	} #>;
+	END;
+<#		} // End of if(0 < GetWriteableNonPrimaryColumns) ##>
+
+	-- Deletes a record from the '<#= table.Name #>' table using the primary key value.
+	PROCEDURE <#= GetDeleteByKeyProcName(table, false) #>
+	(
+<#		bool firstDeleteByPKColumn = true;
+		foreach(IColumn column in table.Columns.GetPrimaryColumns())
+		{ 
+			if(firstDeleteByPKColumn)
+				firstDeleteByPKColumn = false;
+			else
+			{ ##>,
+<#			} ##>
+		<#= GetSqlParameterName(column) #> <#= GetSqlParameterType(column) ##>
+<#		} #>
+	)
+	AS
+	BEGIN
+		DELETE FROM <#= GetFullTableName(table) #> WHERE
+<#		firstDeleteByPKColumn = true;
+		foreach(IColumn column in table.Columns.GetPrimaryColumns())
+		{
+			if(firstDeleteByPKColumn)
+				firstDeleteByPKColumn = false;
+			else
+			{ ##> AND
+<#			} ##>
+			<#= GetSqlName(column.Name) #> = <#= GetSqlParameterName(column) ##>
+<#		} #>;
+	END;
+<#	} // End if(GetHasPrimaryKey(table)) ##>
+<#	foreach(IRelation relation in table.ParentRelations)
+	{ ##>
+
+	-- Delete records from the '<#= table.Name #>' table using a foreign key.
+	PROCEDURE <#= GetDeleteByForeignKeyProcName(relation, false) #>
+	(
+<#		bool firstDeleteByFKColumn = true;
+		foreach(IColumn column in relation.ChildColumns)
+		{ 
+			if(firstDeleteByFKColumn)
+				firstDeleteByFKColumn = false;
+			else
+			{ ##>,
+<#			} ##>
+		<#= GetSqlParameterName(column) #> <#= GetSqlParameterType(column) ##>
+<#		} #>
+	)
+	AS
+	BEGIN
+<#	if(1 == relation.ChildColumns.Length)
+	{ 
+		IColumn column = relation.ChildColumns[0];
+		if(column.Nullable)
+		{ ##>
+		IF <#= GetSqlParameterName(column) ##> IS NULL THEN
+			DELETE FROM <#= GetFullTableName(table) #> WHERE <#= GetSqlName(column.Name) #> IS NULL;
+		ELSE
+	<# /* Need for indent */ ##>
+<#		} ##>
+		DELETE FROM <#= GetFullTableName(table) #> WHERE <#= GetSqlName(column.Name) #> = <#= GetSqlParameterName(column) #>;
+<#		if(column.Nullable)
+		{ ##>
+		END IF;
+<#		} ##>
+<#	}
+	else	// More than 1 column in the foreign key. Use dynamic SQL.
+	{ ##>
+		DELETE FROM <#= GetFullTableName(table) #> WHERE
+<#		firstDeleteByFKColumn = true;
+		foreach(IColumn column in relation.ChildColumns)
+		{
+			if(firstDeleteByFKColumn)
+				firstDeleteByFKColumn = false;
+			else
+			{ ##> AND
+<#			} ##>
+		<#= GetSqlName(column.Name) #> = <#= GetSqlParameterName(column) ##>
+<#		} #>;
+<#	} ##>	
+	END;
+<#	} // End of if(GetHasPrimaryKey) ##>
+
+	-- Deletes all records from the '<#= table.Name #>' table.
+	PROCEDURE <#= GetDeleteAllProcName(table, false) #>
+	AS
+	BEGIN
+		DELETE FROM <#= GetFullTableName(table) #>;
+	END;
+<#	}
+	} // End of if(table.Updatable) ##>
+END;	-- End of the package body
+<#	
+	// Display warnig message
+	Environment.AddInfo("The Oracle stored procedures were saved into 'Db\\" + 
+				RelativeFilePath + "'. Add them into your database before running the generated code.");
+
+	} // End of if(0 < Database.Tables.Count)				
+##>
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.Data;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return @"Sql\" + Database.CodeName + "_PackageBody_Oracle.sql"; }
+	}
+	
+	public override bool Enabled
+	{
+		get
+		{
+			return SharedUtils.IsOracle(Database) &&
+				SharedUtils.GetGenerateStoredProcedures(Database);
+		}
+	}
+	
+	private string GetFullTableName(ITable table)
+	{
+		string fullName = "";
+		if(null != table.Schema && 0 < table.Schema.Length)
+			fullName += GetSqlName(table.Schema) + ".";
+		fullName += GetSqlName(table.Name);
+		return fullName;
+	}
+	
+	private string GetSqlName(string value)
+	{
+		return value;
+	}
+	
+	private string GetGetAllProcName(ITable table, bool fullName)
+	{
+		return Database_PackageDeclaration_Oracle.GetGetAllProcName(table, fullName);
+	}
+	
+	private string GetGetByForeignKeyProcName(IRelation relation, bool fullName)
+	{
+		return Database_PackageDeclaration_Oracle.GetGetByForeignKeyProcName(relation, fullName);
+	}
+	
+	private string GetGetByKeyProcName(ITable table, bool fullName)
+	{
+		return Database_PackageDeclaration_Oracle.GetGetByKeyProcName(table, fullName);
+	}
+	
+	private string GetInsertProcName(ITable table, bool fullName)
+	{
+		return Database_PackageDeclaration_Oracle.GetInsertProcName(table, fullName);
+	}
+
+	private string GetUpdateProcName(ITable table, bool fullName)
+	{
+		return Database_PackageDeclaration_Oracle.GetUpdateProcName(table, fullName);
+	}
+
+	private string GetDeleteByKeyProcName(ITable table, bool fullName)
+	{
+		return Database_PackageDeclaration_Oracle.GetDeleteByKeyProcName(table, fullName);
+	}
+	
+	private string GetDeleteByForeignKeyProcName(IRelation relation, bool fullName)
+	{
+		return Database_PackageDeclaration_Oracle.GetDeleteByForeignKeyProcName(relation, fullName);
+	}
+	
+	private string GetDeleteAllProcName(ITable table, bool fullName)
+	{
+		return Database_PackageDeclaration_Oracle.GetDeleteAllProcName(table, fullName);
+	}
+	
+	private bool GetHasPrimaryKey(ITable table)
+	{
+		return 0 < table.Columns.GetPrimaryColumns().Length;
+	}
+	
+	private string GetSqlParameterName(IColumn column)
+	{
+		return Database_PackageDeclaration_Oracle.GetSqlParameterName(column);
+	}
+
+	private string GetSqlParameterType(IColumn column)
+	{
+		return Database_PackageDeclaration_Oracle.GetSqlParameterType(column);
+	}
+	
+	private string GetPackageName(ITable table)
+	{
+		return Database_PackageDeclaration_Oracle.GetPackageName(table);
+	}
+	
+	private string GetCursorTypeName(ITable table)
+	{
+		return table.CodeName  + "Cursor";
+	}
+##>

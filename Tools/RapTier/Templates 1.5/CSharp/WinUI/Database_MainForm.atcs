@@ -1,0 +1,284 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+// <fileinfo name="<#= RelativeFilePath #>">
+//		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "//			"); ##>
+//		</copyright>
+//		<remarks>
+//			You can update this source code manually. If the file
+//			already exists it will not be rewritten by the generator.
+//		</remarks>
+//		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+// </fileinfo>
+
+using System;
+using System.Drawing;
+using System.Collections;
+using System.ComponentModel;
+using System.Windows.Forms;
+using System.Data;
+
+namespace <#= GetWinUITierNamespace() #>
+{
+	/// <summary>
+	/// Summary description for MainForm.
+	/// </summary>
+	public class MainForm : System.Windows.Forms.Form
+	{
+		/// <summary>
+		/// The main entry point for the application.
+		/// </summary>
+		[STAThread]
+		static void Main() 
+		{
+			Application.Run(new MainForm());
+		}
+
+		private BaseDataTableEditor _tableEditor;
+		private AboutControl _aboutControl;
+
+		/// <summary>
+		/// Required designer variable.
+		/// </summary>
+		private System.ComponentModel.Container components = null;
+
+		/// <summary>
+		/// Creates a new instance of the <see cref="MainForm"/> class.
+		/// </summary>
+		public MainForm()
+		{
+			_aboutControl = new AboutControl();
+
+			//
+			// Required for Windows Form Designer support
+			//
+			InitializeComponent();
+			
+			BuildDbTree();
+		}
+
+		private void BuildDbTree()
+		{
+			System.Windows.Forms.TreeNode tmpNode;
+
+			// Build nodes for tables
+			System.Windows.Forms.TreeNode tablesNode = new System.Windows.Forms.TreeNode("Tables");
+			_dbTree.Nodes.Add(tablesNode);
+			tablesNode.Expand();
+
+<#			foreach(ITable table in Database.Tables)
+			{ 
+				if(!table.View)
+				{ ##>
+			tmpNode = new System.Windows.Forms.TreeNode("<#= table.Name #>");
+			tmpNode.Tag = "<#= table.CodeName #>";
+			tablesNode.Nodes.Add(tmpNode);
+<#				}
+			} ##>
+
+			// Build nodes for views
+			System.Windows.Forms.TreeNode viewsNode = new System.Windows.Forms.TreeNode("Views");
+			_dbTree.Nodes.Add(viewsNode);
+			viewsNode.Expand();
+
+<#			foreach(ITable table in Database.Tables)
+			{ 
+				if(table.View)
+				{ ##>
+			tmpNode = new System.Windows.Forms.TreeNode("<#= table.Name #>");
+			tmpNode.Tag = "<#= table.CodeName #>";
+			viewsNode.Nodes.Add(tmpNode);
+<#				}
+			} ##>
+
+			tablesNode.EnsureVisible();
+		}
+
+		/// <summary>
+		/// Clean up any resources being used.
+		/// </summary>
+		protected override void Dispose( bool disposing )
+		{
+			if( disposing )
+			{
+				if (components != null) 
+				{
+					components.Dispose();
+				}
+			}
+			base.Dispose( disposing );
+		}
+
+		#region Windows Form Designer generated code
+
+		private System.Windows.Forms.TreeView _dbTree;
+		private System.Windows.Forms.Splitter _splitter;
+		private System.Windows.Forms.StatusBar _statusBar;
+		private System.Windows.Forms.Panel _mainPanel;
+		
+		/// <summary>
+		/// Required method for Designer support - do not modify
+		/// the contents of this method with the code editor.
+		/// </summary>
+		private void InitializeComponent()
+		{
+			this._dbTree = new System.Windows.Forms.TreeView();
+			this._splitter = new System.Windows.Forms.Splitter();
+			this._statusBar = new System.Windows.Forms.StatusBar();
+			this._mainPanel = new System.Windows.Forms.Panel();
+
+			this._mainPanel.SuspendLayout();
+			this.SuspendLayout();
+			// 
+			// _dbTree
+			// 
+			this._dbTree.Dock = System.Windows.Forms.DockStyle.Left;
+			this._dbTree.HideSelection = false;
+			this._dbTree.ImageIndex = -1;
+			this._dbTree.Name = "_dbTree";
+			this._dbTree.SelectedImageIndex = -1;
+			this._dbTree.Size = new System.Drawing.Size(216, 445);
+			this._dbTree.TabIndex = 0;
+			this._dbTree.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this._dbTree_AfterSelect);
+			this._dbTree.BeforeSelect += new System.Windows.Forms.TreeViewCancelEventHandler(this._dbTree_BeforeSelect);
+			// 
+			// _splitter
+			// 
+			this._splitter.Location = new System.Drawing.Point(216, 0);
+			this._splitter.Name = "_splitter";
+			this._splitter.Size = new System.Drawing.Size(4, 445);
+			this._splitter.TabIndex = 1;
+			this._splitter.TabStop = false;
+			// 
+			// _statusBar
+			// 
+			this._statusBar.Location = new System.Drawing.Point(0, 445);
+			this._statusBar.Name = "_statusBar";
+			this._statusBar.Size = new System.Drawing.Size(680, 22);
+			this._statusBar.TabIndex = 4;
+			// 
+			// _mainPanel
+			// 
+			this._mainPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+			this._mainPanel.DockPadding.Left = 8;
+			this._mainPanel.DockPadding.Right = 8;
+			this._mainPanel.DockPadding.Top = 8;
+			this._mainPanel.Location = new System.Drawing.Point(219, 0);
+			this._mainPanel.Name = "_mainPanel";
+			this._mainPanel.Size = new System.Drawing.Size(461, 405);
+			this._mainPanel.TabIndex = 5;
+			// 
+			// MainForm
+			// 
+			this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+			this.ClientSize = new System.Drawing.Size(680, 467);
+			this.Controls.AddRange(new System.Windows.Forms.Control[] {
+					this._mainPanel,
+					this._splitter,
+					this._dbTree,
+					this._statusBar});
+			this.Name = "MainForm";
+			this.Text = "<#= Database.CodeName #>";
+			this._mainPanel.ResumeLayout(false);
+			this.Closing += new System.ComponentModel.CancelEventHandler(this.MainForm_Closing);
+			this.ResumeLayout(false);
+		}
+		#endregion
+		
+		private void _dbTree_AfterSelect(object sender, System.Windows.Forms.TreeViewEventArgs e)
+		{
+			// Remove focus from the editor
+			_dbTree.Select();
+
+			_statusBar.Text = e.Node.Text;
+
+			Control viewControl;
+			if(null == e.Node.Tag)
+			{
+				viewControl = _aboutControl;
+				_tableEditor = null;
+			}
+			else
+			{
+				_tableEditor = (BaseDataTableEditor)GetType().Assembly.CreateInstance("<#= GetWinUITierNamespace()#>.Editors." + e.Node.Tag + "TableEditor");
+				viewControl = _tableEditor;
+			}
+
+			_mainPanel.Controls.Clear();
+			viewControl.Dock = DockStyle.Fill;
+			DockPaddingEdges padding = _mainPanel.DockPadding;
+			viewControl.SetBounds(padding.Left, padding.Top,
+					_mainPanel.Size.Width - padding.Left - padding.Right,
+					_mainPanel.Size.Height - padding.Right - padding.Bottom);
+			_mainPanel.Controls.Add(viewControl);
+			_mainPanel.PerformLayout();
+
+			if(null != _tableEditor)
+				_tableEditor.Activate();
+		}
+		
+		private void _dbTree_BeforeSelect(object sender, System.Windows.Forms.TreeViewCancelEventArgs e)
+		{
+			DeactivateCurrentEditor();
+		}
+		
+		private void MainForm_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+		{
+			DeactivateCurrentEditor();
+		}
+
+		private void DeactivateCurrentEditor()
+		{
+			if(null != _tableEditor)
+			{
+				try
+				{
+					_tableEditor.Deactivate();
+				}
+				catch(Exception ex)
+				{
+					MessageBox.Show(this, ex.Message, "<#= Database.CodeName #>", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				}
+			}
+		}
+	}
+}
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.Text;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return "MainForm.cs"; }
+	}
+
+	private string GetWinUITierNamespace()
+	{
+		return SharedUtils.GetWinUITierNamespace(Database);
+	}
+	
+	private string GetFullDbClassName()
+	{
+		return SharedUtils.GetDbTierUserNamespace(Database) + "." + Database.CodeName;
+	}
+##>
