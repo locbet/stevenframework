@@ -1,0 +1,304 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+<VisualStudioProject>
+    <CSHARP
+        ProjectType = "Local"
+        ProductVersion = "<#= ProductVersion #>"
+        SchemaVersion = "<#= ShemaVersion #>"
+        ProjectGuid = "<#= GetWinUIProjectId() #>"
+    >
+        <Build>
+            <Settings
+                ApplicationIcon = "App.ico"
+                AssemblyKeyContainerName = ""
+                AssemblyName = "<#= GetWinUITierNamespace() #>"
+                AssemblyOriginatorKeyFile = ""
+                DefaultClientScript = "JScript"
+                DefaultHTMLPageLayout = "Grid"
+                DefaultTargetSchema = "IE50"
+                DelaySign = "false"
+                OutputType = "WinExe"
+<#				if(IsVS2003OrLater)
+				{ ##>
+                PreBuildEvent = ""
+                PostBuildEvent = ""
+                RunPostBuildEvent = "OnBuildSuccess"
+<#				} ##>
+                RootNamespace = "<#= GetWinUITierNamespace() #>"
+                StartupObject = ""
+            >
+                <Config
+                    Name = "Debug"
+                    AllowUnsafeBlocks = "false"
+                    BaseAddress = "285212672"
+                    CheckForOverflowUnderflow = "false"
+                    ConfigurationOverrideFile = ""
+                    DefineConstants = "DEBUG;TRACE"
+                    DocumentationFile = ""
+                    DebugSymbols = "true"
+                    FileAlignment = "4096"
+                    IncrementalBuild = "true"
+<#					if(IsVS2003OrLater)
+					{ ##>
+                    NoStdLib = "false"
+                    NoWarn = ""
+<#					} ##>
+                    Optimize = "false"
+                    OutputPath = "bin\Debug\"
+                    RegisterForComInterop = "false"
+                    RemoveIntegerChecks = "false"
+                    TreatWarningsAsErrors = "false"
+                    WarningLevel = "4"
+                />
+                <Config
+                    Name = "Release"
+                    AllowUnsafeBlocks = "false"
+                    BaseAddress = "285212672"
+                    CheckForOverflowUnderflow = "false"
+                    ConfigurationOverrideFile = ""
+                    DefineConstants = "TRACE"
+                    DocumentationFile = ""
+                    DebugSymbols = "false"
+                    FileAlignment = "4096"
+                    IncrementalBuild = "false"
+<#					if(IsVS2003OrLater)
+					{ ##>
+                    NoStdLib = "false"
+                    NoWarn = ""
+<#					} ##>
+                    Optimize = "true"
+                    OutputPath = "bin\Release\"
+                    RegisterForComInterop = "false"
+                    RemoveIntegerChecks = "false"
+                    TreatWarningsAsErrors = "false"
+                    WarningLevel = "4"
+                />
+            </Settings>
+            <References>
+                <Reference
+                    Name = "System"
+                    AssemblyName = "System"
+                    HintPath = "<#= GetSystemHintPath("System.dll") #>"
+                />
+                <Reference
+                    Name = "System.Data"
+                    AssemblyName = "System.Data"
+                    HintPath = "<#= GetSystemHintPath("System.Data.dll") #>"
+                />
+                <Reference
+                    Name = "System.Drawing"
+                    AssemblyName = "System.Drawing"
+                    HintPath = "<#= GetSystemHintPath("System.Drawing.dll") #>"
+                />
+                <Reference
+                    Name = "System.Windows.Forms"
+                    AssemblyName = "System.Windows.Forms"
+                    HintPath = "<#= GetSystemHintPath("System.Windows.Forms.dll") #>"
+                />
+                <Reference
+                    Name = "System.XML"
+                    AssemblyName = "System.XML"
+                    HintPath = "<#= GetSystemHintPath("System.XML.dll") #>"
+                />
+                <Reference
+                    Name = "Db"
+                    Project = "<#= GetDbProjectId() #>"
+                    Package = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
+                />
+            </References>
+        </Build>
+        <Files>
+            <Include>
+                <File
+                    RelPath = "AboutControl.cs"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "AboutControl.resx"
+                    DependentUpon = "AboutControl.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "App.ico"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "AssemblyInfo.cs"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "MainForm.cs"
+                    SubType = "Form"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "MainForm.resx"
+                    DependentUpon = "MainForm.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "BaseDataTableEditor.cs"
+                    SubType = "UserControl"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "BaseDataTableEditor.resx"
+                    DependentUpon = "BaseDataTableEditor.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "DbNavigator.cs"
+                    SubType = "UserControl"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "DbNavigator.resx"
+                    DependentUpon = "DbNavigator.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+<#	foreach(ITable table in Database.Tables)
+	{ ##>
+                <File
+                    RelPath = "Editors\<#= table.CodeName #>RowEditor.cs"
+                    SubType = "UserControl"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "Editors\<#= table.CodeName #>RowEditor.resx"
+                    DependentUpon = "<#= table.CodeName #>RowEditor.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Editors\<#= table.CodeName #>TableEditor.cs"
+                    SubType = "UserControl"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "Editors\<#= table.CodeName #>TableEditor.resx"
+                    DependentUpon = "<#= table.CodeName #>TableEditor.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+<#	} ##>
+            </Include>
+        </Files>
+    </CSHARP>
+</VisualStudioProject>
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.IO;
+using System.Text;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override bool Enabled
+	{
+		get { return TargetIDE.StartsWith("VSNET"); }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return "WinUI.csproj"; }
+	}
+	
+	private string GetNamespace()
+	{
+		return SharedUtils.GetWinUITierNamespace(Database);
+	}
+	
+	private string GetProjectId(string key)
+	{
+		string value = (string)Environment.Session[key];
+		if(null == value)
+		{
+			value = Guid.NewGuid().ToString("B").ToUpper();
+			Environment.Session[key] = value;
+		}
+		return value;
+	}
+
+	private string GetDbProjectId()
+	{
+		return GetProjectId("DbProjectId");
+	}
+
+	private string GetSystemHintPath(string assemblyFile)
+	{
+		string frameworkDir = Path.GetDirectoryName(typeof(string).Assembly.Location);
+		return Path.Combine(frameworkDir, assemblyFile);
+	}
+
+	private string GetWebUIProjectId()
+	{
+		return GetProjectId("WebUIProjectId");
+	}
+	
+	private string GetWinUIProjectId()
+	{
+		return GetProjectId("WinUIProjectId");
+	}
+	
+	private string GetWinUITierNamespace()
+	{
+		return SharedUtils.GetWinUITierNamespace(Database);
+	}
+	
+	private string TargetIDE
+	{
+		get { return Database.ExtendedProperties["TargetIDE"]; }
+	}
+	
+	private string ProductVersion
+	{
+		get
+		{
+			switch(TargetIDE)
+			{
+				case "VSNET2002":
+					return "7.0.9466";
+
+				case "VSNET2003":
+					return "7.10.3077";
+			}
+			return "Unknown";
+		}
+	}
+	
+	private string ShemaVersion
+	{
+		get
+		{
+			switch(TargetIDE)
+			{
+				case "VSNET2002":
+					return "1.0";
+
+				case "VSNET2003":
+					return "2.0";
+			}
+			return "Unknown";
+		}
+	}
+	
+	private bool IsVS2003OrLater
+	{
+		get { return TargetIDE != "VSNET2002"; }
+	}
+##>

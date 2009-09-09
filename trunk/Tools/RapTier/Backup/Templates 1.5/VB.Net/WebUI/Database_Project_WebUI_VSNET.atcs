@@ -1,0 +1,313 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+<VisualStudioProject>
+    <VisualBasic
+        ProjectType = "Web"
+        ProductVersion = "<#= ProductVersion #>"
+        SchemaVersion = "<#= ShemaVersion #>"
+        ProjectGuid = "<#= GetWebUIProjectId() #>"
+    >
+        <Build>
+            <Settings
+                ApplicationIcon = ""
+                AssemblyKeyContainerName = ""
+                AssemblyName = "<#= GetWebUITierNamespace() #>"
+                AssemblyOriginatorKeyFile = ""
+				AssemblyOriginatorKeyMode = "None"
+                DefaultClientScript = "JScript"
+                DefaultHTMLPageLayout = "Grid"
+                DefaultTargetSchema = "IE50"
+                DelaySign = "false"
+                OutputType = "Library"
+                OptionExplicit = "On"
+                OptionStrict = "Off"
+                RootNamespace = "<#= GetWebUITierNamespace() #>"
+                StartupObject = "<#= GetWebUITierNamespace() #>.MainForm"
+            >
+                <Config
+                    Name = "Debug"
+                    BaseAddress = "285212672"
+                    ConfigurationOverrideFile = ""
+                    DefineConstants = ""
+                    DefineDebug = "true"
+                    DefineTrace = "true"
+                    DebugSymbols = "true"
+                    IncrementalBuild = "true"
+                    Optimize = "false"
+                    OutputPath = "bin\"
+                    RegisterForComInterop = "false"
+                    RemoveIntegerChecks = "false"
+                    TreatWarningsAsErrors = "false"
+                    WarningLevel = "1"
+                />
+                <Config
+                    Name = "Release"
+                    BaseAddress = "285212672"
+                    ConfigurationOverrideFile = ""
+                    DefineConstants = ""
+                    DefineDebug = "false"
+                    DefineTrace = "true"
+                    DebugSymbols = "false"
+                    IncrementalBuild = "false"
+                    Optimize = "true"
+                    OutputPath = "bin\"
+                    RegisterForComInterop = "false"
+                    RemoveIntegerChecks = "false"
+                    TreatWarningsAsErrors = "false"
+                    WarningLevel = "1"
+                />
+            </Settings>
+            <References>
+                <Reference
+                    Name = "System"
+                    AssemblyName = "System"
+                />
+                <Reference
+                    Name = "System.Data"
+                    AssemblyName = "System.Data"
+                />
+                <Reference
+                    Name = "System.Web"
+                    AssemblyName = "System.Web"
+                />
+                <Reference
+                    Name = "System.XML"
+                    AssemblyName = "System.XML"
+                />
+                <Reference
+                    Name = "Db"
+                    Project = "<#= GetDbProjectId() #>"
+                    Package = "{F184B08F-C81C-45F6-A57F-5ABD9991F28F}"
+                />
+            </References>
+            <Imports>
+                <Import Namespace = "Microsoft.VisualBasic" />
+                <Import Namespace = "System" />
+                <Import Namespace = "System.Collections" />
+                <Import Namespace = "System.ComponentModel" />
+                <Import Namespace = "System.Data" />
+                <Import Namespace = "System.Diagnostics" />
+            </Imports>
+        </Build>
+        <Files>
+            <Include>
+				<File
+					RelPath = "AssemblyInfo.vb"
+					SubType = "Code"
+					BuildAction = "Compile"
+				/>
+				<File
+					RelPath = "Web.config"
+					BuildAction = "Content"
+				/>
+				<File
+					RelPath = "Global.asax"
+					SubType = "Component"
+					BuildAction = "Content"
+				/>
+				<File
+					RelPath = "Global.asax.vb"
+					DependentUpon = "Global.asax"
+					SubType = "Code"
+					BuildAction = "Compile"
+				/>
+				<File
+					RelPath = "Global.asax.resx"
+					DependentUpon = "Global.asax.vb"
+					BuildAction = "EmbeddedResource"
+				/>
+				<File
+					RelPath = "About.htm"
+					BuildAction = "Content"
+				/>
+				<File
+					RelPath = "Default.htm"
+					BuildAction = "Content"
+				/>
+				<File
+					RelPath = "Header.htm"
+					BuildAction = "Content"
+				/>
+				<File
+					RelPath = "Images\Cancel.gif"
+					BuildAction = "Content"
+				/>
+				<File
+					RelPath = "Images\Delete.gif"
+					BuildAction = "Content"
+				/>
+				<File
+					RelPath = "Images\Edit.gif"
+					BuildAction = "Content"
+				/>
+				<File
+					RelPath = "Images\Insert.gif"
+					BuildAction = "Content"
+				/>
+				<File
+					RelPath = "Images\Table.gif"
+					BuildAction = "Content"
+				/>
+				<File
+					RelPath = "Images\Update.gif"
+					BuildAction = "Content"
+				/>
+				<File
+					RelPath = "Images\View.gif"
+					BuildAction = "Content"
+				/>
+				<File
+					RelPath = "Images\n.gif"
+					BuildAction = "Content"
+				/>
+				<File
+					RelPath = "Images\RapTierLogo.gif"
+					BuildAction = "Content"
+				/>
+				<File
+					RelPath = "css\Default.css"
+					BuildAction = "Content"
+				/>
+<#
+	foreach(ITable table in Database.Tables)
+	{ ##>
+				<File
+					RelPath = "Editors\<#= table.CodeName #>.aspx"
+					SubType = "Form"
+					BuildAction = "Content"
+				/>
+				<File
+					RelPath = "Editors\<#= table.CodeName #>.aspx.vb"
+					DependentUpon = "<#= table.CodeName #>.aspx"
+					SubType = "ASPXCodeBehind"
+					BuildAction = "Compile"
+				/>
+				<File
+					RelPath = "Editors\<#= table.CodeName #>.aspx.resx"
+					DependentUpon = "<#= table.CodeName #>.aspx.vb"
+					BuildAction = "EmbeddedResource"
+				/>
+<#	} ##>
+            </Include>
+        </Files>
+    </VisualBasic>
+</VisualStudioProject>
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.IO;
+using System.Text;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override bool Enabled
+	{
+		get { return TargetIDE.StartsWith("VSNET"); }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return "WebUI.vbproj"; }
+	}
+	
+	private string GetNamespace()
+	{
+		return SharedUtils.GetWebUITierNamespace(Database);
+	}
+	
+	private string GetProjectId(string key)
+	{
+		string value = (string)Environment.Session[key];
+		if(null == value)
+		{
+			value = Guid.NewGuid().ToString("B").ToUpper();
+			Environment.Session[key] = value;
+		}
+		return value;
+	}
+
+	private string GetDbProjectId()
+	{
+		return GetProjectId("DbProjectId");
+	}
+
+	private string GetSystemHintPath(string assemblyFile)
+	{
+		string frameworkDir = Path.GetDirectoryName(typeof(string).Assembly.Location);
+		return Path.Combine(frameworkDir, assemblyFile);
+	}
+
+	private string GetWebUIProjectId()
+	{
+		return GetProjectId("WebUIProjectId");
+	}
+	
+	private string GetWinUIProjectId()
+	{
+		return GetProjectId("WinUIProjectId");
+	}
+	
+	private string GetWebUITierNamespace()
+	{
+		return SharedUtils.GetWebUITierNamespace(Database);
+	}
+	
+	private string TargetIDE
+	{
+		get { return Database.ExtendedProperties["TargetIDE"]; }
+	}
+	
+	private string ProductVersion
+	{
+		get
+		{
+			switch(TargetIDE)
+			{
+				case "VSNET2002":
+					return "7.0.9466";
+
+				case "VSNET2003":
+					return "7.10.3077";
+			}
+			return "Unknown";
+		}
+	}
+	
+	private string ShemaVersion
+	{
+		get
+		{
+			switch(TargetIDE)
+			{
+				case "VSNET2002":
+					return "1.0";
+
+				case "VSNET2003":
+					return "2.0";
+			}
+			return "Unknown";
+		}
+	}
+	
+	private bool IsVS2003OrLater
+	{
+		get { return TargetIDE != "VSNET2002"; }
+	}	
+##>

@@ -1,0 +1,251 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+' <fileinfo name="<#= RelativeFilePath #>">
+'		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "'			"); ##>
+'		</copyright>
+'		<remarks>
+'			You can update this source code manually. If the file
+'			already exists it will not be rewritten by the generator.
+'		</remarks>
+'		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+' </fileinfo>
+
+Option Strict Off
+Option Explicit On
+
+Imports System
+Imports System.Windows.Forms
+
+''' <summary>
+''' Summary description for MainForm.
+''' </summary>
+Public Class MainForm
+			Inherits System.Windows.Forms.Form
+	Private _tableEditor As BaseDataTableEditor
+	Private _aboutControl As AboutControl
+
+#Region " Windows Form Designer generated code "
+
+	''' <summary>
+	''' Creates a new instance of the <see cref="MainForm"/> class.
+	''' </summary>
+    Public Sub New()
+        MyBase.New()
+
+		_aboutControl = new AboutControl()
+
+        ' This call is required by the Windows Form Designer.
+        InitializeComponent()
+
+        ' Add any initialization after the InitializeComponent() call
+		BuildDbTree()
+    End Sub
+
+    ' UserControl overrides dispose to clean up the component list.
+    Protected Overloads Overrides Sub Dispose(ByVal disposing As Boolean)
+        If disposing Then
+            If Not (components Is Nothing) Then
+                components.Dispose()
+            End If
+        End If
+        MyBase.Dispose(disposing)
+    End Sub
+
+    ' Required by the Windows Form Designer
+    Private components As System.ComponentModel.IContainer
+
+    ' NOTE: The following procedure is required by the Windows Form Designer
+    ' It can be modified using the Windows Form Designer.  
+    ' Do not modify it using the code editor.
+	Friend WithEvents _dbTree As System.Windows.Forms.TreeView
+	Friend WithEvents _splitter As System.Windows.Forms.Splitter
+	Friend WithEvents _statusBar As System.Windows.Forms.StatusBar
+	Friend WithEvents _mainPanel As System.Windows.Forms.Panel
+    <System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
+		Me._dbTree = new System.Windows.Forms.TreeView()
+		Me._splitter = new System.Windows.Forms.Splitter()
+		Me._statusBar = new System.Windows.Forms.StatusBar()
+		Me._mainPanel = new System.Windows.Forms.Panel()
+
+		Me._mainPanel.SuspendLayout()
+		Me.SuspendLayout()
+		' 
+		' _dbTree
+		' 
+		Me._dbTree.Dock = System.Windows.Forms.DockStyle.Left
+		Me._dbTree.HideSelection = False
+		Me._dbTree.ImageIndex = -1
+		Me._dbTree.Name = "_dbTree"
+		Me._dbTree.SelectedImageIndex = -1
+		Me._dbTree.Size = new System.Drawing.Size(216, 445)
+		Me._dbTree.TabIndex = 0
+		' 
+		' _splitter
+		' 
+		Me._splitter.Location = new System.Drawing.Point(216, 0)
+		Me._splitter.Name = "_splitter"
+		Me._splitter.Size = new System.Drawing.Size(4, 445)
+		Me._splitter.TabIndex = 1
+		Me._splitter.TabStop = false
+		' 
+		' _statusBar
+		' 
+		Me._statusBar.Location = new System.Drawing.Point(0, 445)
+		Me._statusBar.Name = "_statusBar"
+		Me._statusBar.Size = new System.Drawing.Size(680, 22)
+		Me._statusBar.TabIndex = 4
+		' 
+		' _mainPanel
+		' 
+		Me._mainPanel.Dock = System.Windows.Forms.DockStyle.Fill
+		Me._mainPanel.DockPadding.Left = 8
+		Me._mainPanel.DockPadding.Right = 8
+		Me._mainPanel.DockPadding.Top = 8
+		Me._mainPanel.Location = new System.Drawing.Point(219, 0)
+		Me._mainPanel.Name = "_mainPanel"
+		Me._mainPanel.Size = new System.Drawing.Size(461, 405)
+		Me._mainPanel.TabIndex = 5
+		' 
+		' MainForm
+		' 
+		Me.AutoScaleBaseSize = new System.Drawing.Size(5, 13)
+		Me.ClientSize = new System.Drawing.Size(680, 467)
+		Me.Controls.AddRange(new System.Windows.Forms.Control() { _
+				Me._mainPanel, _
+				Me._splitter, _
+				Me._dbTree, _
+				Me._statusBar})
+		Me.Name = "MainForm"
+		Me.Text = "<#= Database.CodeName #>"
+		Me._mainPanel.ResumeLayout(false)
+		Me.ResumeLayout(false)
+	End Sub
+	
+#End Region
+
+	Private Sub BuildDbTree()
+		Dim tmpNode As System.Windows.Forms.TreeNode
+
+		' Build nodes for tables
+		Dim tablesNode As System.Windows.Forms.TreeNode = new System.Windows.Forms.TreeNode("Tables")
+		_dbTree.Nodes.Add(tablesNode)
+		tablesNode.Expand()
+
+<#			foreach(ITable table in Database.Tables)
+			{ 
+				if(!table.View)
+				{ ##>
+		tmpNode = new System.Windows.Forms.TreeNode("<#= table.Name #>")
+		tmpNode.Tag = "<#= table.CodeName #>"
+		tablesNode.Nodes.Add(tmpNode)
+<#				}
+			} ##>
+
+		' Build nodes for views
+		Dim viewsNode As System.Windows.Forms.TreeNode = new System.Windows.Forms.TreeNode("Views")
+		_dbTree.Nodes.Add(viewsNode)
+		viewsNode.Expand()
+
+<#			foreach(ITable table in Database.Tables)
+			{ 
+				if(table.View)
+				{ ##>
+		tmpNode = new System.Windows.Forms.TreeNode("<#= table.Name #>")
+		tmpNode.Tag = "<#= table.CodeName #>"
+		viewsNode.Nodes.Add(tmpNode)
+<#				}
+			} ##>
+
+		tablesNode.EnsureVisible()
+	End Sub
+		
+	Private Sub _dbTree_AfterSelect(sender As Object, _
+				e As System.Windows.Forms.TreeViewEventArgs) Handles _dbTree.AfterSelect
+		' Remove focus from the editor
+		_dbTree.Select()
+
+		_statusBar.Text = e.Node.Text
+
+		Dim viewControl As Control
+		if e.Node.Tag Is Nothing Then
+			viewControl = _aboutControl
+			_tableEditor = Nothing
+		Else
+			_tableEditor = CType(Me.GetType().Assembly.CreateInstance("<#= GetWinUITierNamespace()#>.Editors." + e.Node.Tag + "TableEditor"), BaseDataTableEditor)
+			viewControl = _tableEditor
+		End If
+
+		_mainPanel.Controls.Clear()
+		viewControl.Dock = DockStyle.Fill
+		Dim padding As DockPaddingEdges = _mainPanel.DockPadding
+		viewControl.SetBounds(padding.Left, padding.Top, _
+				_mainPanel.Size.Width - padding.Left - padding.Right, _
+				_mainPanel.Size.Height - padding.Right - padding.Bottom)
+		_mainPanel.Controls.Add(viewControl)
+		_mainPanel.PerformLayout()
+		
+		If Not(_tableEditor Is Nothing) Then
+			_tableEditor.Activate()
+		End If
+	End Sub
+	
+	Private Sub _dbTree_BeforeSelect(sender As Object, _
+				e As System.Windows.Forms.TreeViewCancelEventArgs) Handles _dbTree.BeforeSelect
+		DeactivateCurrentEditor()
+	End Sub
+
+	Private Sub MainForm_Closing(sender As Object, _
+				e As System.ComponentModel.CancelEventArgs) Handles MyBase.Closing
+		DeactivateCurrentEditor()
+	End Sub
+
+	Private Sub DeactivateCurrentEditor()
+		If Not(_tableEditor Is Nothing) Then
+			Try
+				_tableEditor.Deactivate()
+			Catch ex As Exception
+				MessageBox.Show(Me, ex.Message, "<#= Database.CodeName #>", MessageBoxButtons.OK, MessageBoxIcon.Error)
+			End Try
+		End If
+	End Sub
+End Class
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.Text;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return "MainForm.vb"; }
+	}
+
+	private string GetWinUITierNamespace()
+	{
+		return SharedUtils.GetWinUITierNamespace(Database);
+	}
+	
+	private string GetFullDbClassName()
+	{
+		return SharedUtils.GetDbTierUserNamespace(Database) + "." + Database.CodeName;
+	}
+##>
