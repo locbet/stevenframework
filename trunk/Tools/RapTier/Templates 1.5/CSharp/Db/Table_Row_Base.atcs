@@ -135,7 +135,7 @@ using SharpPower.DbDom;
 
 	public override string RelativeFilePath
 	{
-		get { return SharedUtils.GetBaseClassRelativePath("Entities\\" + GetClassName() + ".cs"); }
+		get { return SharedUtils.GetBaseClassRelativePath("Entity\\" + GetClassName() + ".cs"); }
 	}
 
 	private string GetClassName()
