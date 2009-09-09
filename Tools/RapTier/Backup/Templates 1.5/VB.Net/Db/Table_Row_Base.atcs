@@ -1,0 +1,210 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+' <fileinfo name="<#= RelativeFilePath #>">
+'		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "'			"); ##>
+'		</copyright>
+'		<remarks>
+'			Do not change this source code manually. Changes to this file may 
+'			cause incorrect behavior and will be lost if the code is regenerated.
+'		</remarks>
+'		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+' </fileinfo>
+
+Option Strict Off
+Option Explicit On
+
+Imports System
+
+<#	if(0 < RelativeNamespace.Length)
+	{ ##>
+Namespace <#= RelativeNamespace #>
+<#	} ##>
+''' <summary>
+''' The base class for <see cref="<#= GetUserClassName() #>"/> that 
+''' represents a record in the <c><#= Table.Name #></c> <#= GetTableView() #>.
+''' </summary>
+''' <remarks>
+''' Do not change this source code manually. Update the <see cref="<#= GetUserClassName() #>"/>
+''' class if you need to add or change some functionality.
+''' </remarks>
+Public MustInherit Class <#= GetClassName() #>
+<#		foreach(IColumn column in Table.Columns)
+	{ ##>
+	Private <#= GetFieldName(column) #> As <#= GetDotNetTypeName(column)#>
+<#		if(ShouldGenerateNullableProperty(column))
+	{ ##>
+	Private <#= GetFieldName(column) #>Null As Boolean = True
+<#		} ##>
+<#		} ##>
+
+	''' <summary>
+	''' Initializes a new instance of the <see cref="<#= GetClassName() #>"/> class.
+	''' </summary>
+	Public Sub New()
+		MyBase.New()
+		' EMPTY
+	End Sub
+
+<#		// Write properties
+	foreach(IColumn column in Table.Columns)
+	{ ##>
+		''' <summary>
+		''' Gets or sets the <c><#= column.Name #></c> column value.
+<#			if(column.Nullable)
+			{ ##>
+		''' This column is nullable.
+<#			} ##>		
+		''' </summary>
+		''' <value>The <c><#= column.Name #></c> column value.</value>
+	Public Property <#= GetPropertyName(column, true) #> As <#= GetDotNetTypeName(column)#>
+<#		if(ShouldGenerateNullableProperty(column))
+		{ ##>
+		Get
+			If Is<#= GetPropertyName(column, false) #>Null Then
+				Throw New InvalidOperationException("Cannot get value because it is DBNull.")
+			End If
+			Return <#= GetFieldName(column) #>
+		End Get
+		Set
+			<#= GetFieldName(column) #>Null = false
+			<#= GetFieldName(column) #> = value
+		End Set
+<#			}
+		else
+		{ ##>
+		Get
+			Return <#= GetFieldName(column) #>
+		End Get
+		Set
+			<#= GetFieldName(column) #> = value
+		End Set
+<#			} ##>
+	End Property
+<#		if(ShouldGenerateNullableProperty(column))
+	{ ##>
+
+	''' <summary>
+	''' Indicates whether the <see cref="<#= GetPropertyName(column, false) #>"/>
+	''' property value is null.
+	''' </summary>
+	''' <value>true if the property value is null, otherwise false.</value>
+	Public Property Is<#= GetPropertyName(column, false) #>Null As Boolean
+		Get
+			Return <#= GetFieldName(column) #>Null
+		End Get
+		Set
+			<#= GetFieldName(column) #>Null = value
+		End Set
+	End Property
+<#		}	// end if column.Nullable ##>
+
+<#		} ##>
+	''' <summary>
+	''' Returns the string representation of this instance.
+	''' </summary>
+	''' <returns>The string representation of this instance.</returns>
+	Public Overrides Function ToString() As String
+		Dim dynStr As System.Text.StringBuilder = New System.Text.StringBuilder(Me.GetType().Name)
+		dynStr.Append(":")
+<#			foreach(IColumn column in Table.Columns)
+		{ 
+			if(!GetDotNetType(column).IsArray)
+			{ ##>
+		dynStr.Append("  <#= GetPropertyName(column, false) #>=")
+<#					if(ShouldGenerateNullableProperty(column))
+				{ ##>
+		If Is<#= GetPropertyName(column, false) #>Null Then
+			dynStr.Append("<NULL>")
+		Else
+			dynStr.Append(Me.<#= GetPropertyName(column, true) #>)
+		End If
+<#					}
+				else
+				{ ##>
+		dynStr.Append(Me.<#= GetPropertyName(column, true) #>)
+<#					}
+			}
+		}
+##>
+		Return dynStr.ToString()
+	End Function
+End Class
+<#	if(0 < RelativeNamespace.Length)
+	{ ##>
+End Namespace
+<#	} ##>
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.Data.OleDb;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private ITable Table
+	{
+		get { return (ITable)Environment["Table"]; }
+	}
+
+	private string GetClassName()
+	{
+		return Table.CodeName + "Row_Base";
+	}
+	
+	private string GetUserClassName()
+	{
+		return Table.CodeName + "Row";
+	}
+	
+	public override string RelativeFilePath
+	{
+		get { return SharedUtils.GetBaseClassRelativePath(GetClassName() + ".vb"); }
+	}
+	
+	private bool ShouldGenerateNullableProperty(IColumn column)
+	{
+		return column.Nullable && SharedUtils.ToDotNetType(column.OleDbType).IsValueType;
+	}
+	
+	private string GetFieldName(IColumn column)
+	{
+		return SharedUtils.GetFieldName(column.CodeName);
+	}
+	
+	private string GetPropertyName(IColumn column, bool checkForKeyword)
+	{
+		return SharedUtils.GetPropertyName(column.CodeName, checkForKeyword);
+	}
+	
+	private Type GetDotNetType(IColumn column)
+	{
+		return SharedUtils.GetDotNetType(column, false);
+	}
+	
+	private string GetDotNetTypeName(IColumn column)
+	{
+		return SharedUtils.GetCSharpTypeName(GetDotNetType(column));
+	}
+
+	private string GetTableView()
+	{
+		return Table.View ? "view" : "table";
+	}
+	
+	private string RelativeNamespace
+	{
+		get { return SharedUtils.BaseClassSubDirectory; }
+	}
+	
+	private string GetNamespace()
+	{
+		return SharedUtils.GetDbTierBaseNamespace(Table.Database);
+	}
+##>
