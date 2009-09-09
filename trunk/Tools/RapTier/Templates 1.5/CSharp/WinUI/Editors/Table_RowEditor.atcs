@@ -1,0 +1,202 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+// <fileinfo name="<#= RelativeFilePath #>">
+//		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "//			"); ##>
+//		</copyright>
+//		<remarks>
+//			You can update this source code manually. If the file
+//			already exists it will not be rewritten by the generator.
+//		</remarks>
+//		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+// </fileinfo>
+
+using System;
+using System.Collections;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Windows.Forms;
+
+namespace <#= GetWinUITierNamespace() #>.Editors
+{
+	/// <summary>
+	/// This control is used to display and edit properties 
+	/// of <#= GetTableRowClassName(Table) #> objects.
+	/// </summary>
+	public class <#= GetRowEditorClassName(Table) #> : System.Windows.Forms.UserControl
+	{
+		private object _dataSource;
+
+		/// <summary>
+		/// Creates a new instance of <#= GetRowEditorClassName(Table) #>.
+		/// </summary>
+		public <#= GetRowEditorClassName(Table) #>()
+		{
+			// This call is required by the Windows.Forms Form Designer.
+			InitializeComponent();
+
+			// TODO: Add any initialization after the InitForm call
+		}
+
+		/// <summary> 
+		/// Clean up any resources being used.
+		/// </summary>
+		protected override void Dispose( bool disposing )
+		{
+			if( disposing )
+			{
+				if(components != null)
+				{
+					components.Dispose();
+				}
+			}
+			base.Dispose( disposing );
+		}
+
+		#region Component Designer generated code
+
+<#		foreach(IColumn column in Table.Columns)
+		{ ##>
+		private System.Windows.Forms.Label _lbl<#= column.CodeName #>;
+		private System.Windows.Forms.TextBox _txt<#= column.CodeName #>;
+<#		} ##>
+		private System.ComponentModel.Container components = null;
+		/// <summary> 
+		/// Required method for Designer support - do not modify 
+		/// the contents of this method with the code editor.
+		/// </summary>
+		private void InitializeComponent()
+		{
+<#		foreach(IColumn column in Table.Columns)
+		{ ##>
+			this._lbl<#= column.CodeName #> = new System.Windows.Forms.Label();
+			this._txt<#= column.CodeName #> = new System.Windows.Forms.TextBox();
+<#		} ##>
+
+			this.SuspendLayout();
+
+<#		int tabIndex = 0;
+		foreach(IColumn column in Table.Columns)
+		{ ##>
+			//
+			// _lbl<#= column.CodeName #>
+			//
+			this._lbl<#= column.CodeName #>.Text = "<#= column.DisplayName #>";
+			this._lbl<#= column.CodeName #>.TabIndex = <#= tabIndex #>;
+			this._lbl<#= column.CodeName #>.Location = new System.Drawing.Point(0, <#= tabIndex * 24 + 8 #>);
+			this._lbl<#= column.CodeName #>.Size = new System.Drawing.Size(150, 23);
+
+			//
+			// _txt<#= column.CodeName #>
+			//
+			this._txt<#= column.CodeName #>.TabIndex = <#= tabIndex #>;
+			this._txt<#= column.CodeName #>.ReadOnly = <#= (column.ReadOnly || Table.View) ? "true" : "false" #>;
+			this._txt<#= column.CodeName #>.Location = new System.Drawing.Point(160, <#= tabIndex * 24 + 8 #>);
+<#			if(0 < column.Length && int.MaxValue > column.Length &&
+					SharedUtils.GetDotNetType(column, false) == typeof(string))
+			{ ##>
+			this._txt<#= column.CodeName #>.MaxLength = <#= column.Length #>;
+<#			} ##>
+			this._txt<#= column.CodeName #>.Size = new System.Drawing.Size(232, 20);
+			this._txt<#= column.CodeName #>.Anchor = ((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+					| System.Windows.Forms.AnchorStyles.Right);
+			
+<#			tabIndex++;
+		} ##>
+
+			this.Name = "<#= GetRowEditorClassName(Table) #>";
+			this.Size = new System.Drawing.Size(400, 300);
+			this.AutoScroll = true;
+			this.Controls.AddRange(new System.Windows.Forms.Control[] {
+<#		
+		for(int i = 0; i < Table.Columns.Count; i++)
+		{ ##>
+					this._lbl<#= Table.Columns[i].CodeName #>,
+					this._txt<#= Table.Columns[i].CodeName #><#= i < Table.Columns.Count - 1 ? "," : "" #>
+<#		} ##>
+				});
+
+			this.ResumeLayout(false);
+		}
+		#endregion
+		
+		/// <summary>
+		/// Sets the data source.
+		/// </summary>
+		/// <param name="dataSource">The data source.</param>
+		public void SetDataBinding(object dataSource)
+		{
+			if(_dataSource != dataSource)
+			{
+				_dataSource = dataSource;
+
+<#				foreach(IColumn column in Table.Columns)
+				{ ##>
+				this._txt<#= column.CodeName #>.DataBindings.Clear();
+<#				} ##>
+
+				if(null != dataSource)
+				{
+<#					foreach(IColumn column in Table.Columns)
+					{ ##>
+					this._txt<#= column.CodeName #>.DataBindings.Add("Text", dataSource, "<#= Table.CodeName #>.<#= column.CodeName #>");
+<#					} ##>
+				}
+			}
+		}
+	}
+}
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private ITable Table
+	{
+		get { return (ITable)Environment["Table"]; }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return GetRowEditorClassName(Table) + ".cs"; }
+	}
+
+	private string GetRowEditorClassName(ITable table)
+	{
+		return table.CodeName + "RowEditor";
+	}
+	
+	private string GetTableRowClassName(ITable table)
+	{
+		return table.CodeName + "Row";
+	}
+	
+	private string GetPropertyName(IColumn column)
+	{
+		return SharedUtils.GetPropertyName(column.CodeName);
+	}
+
+	private string GetWinUITierNamespace()
+	{
+		return SharedUtils.GetWinUITierNamespace(Table.Database);
+	}
+	
+	private string GetChildRelationName(IRelation relation)
+	{
+		return relation.ChildColumns[0].Table.CodeName;
+	}
+##>

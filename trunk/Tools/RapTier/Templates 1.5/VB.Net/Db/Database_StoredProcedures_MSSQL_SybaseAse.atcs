@@ -1,0 +1,482 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+----------------------------------------------------------
+-- Stored Procedures for the '<#= Database.CodeName #>' database
+-- Generator: RapTier http://www.SharpPower.com
+
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "-- "); ##>
+----------------------------------------------------------
+
+USE [<#= Database.CodeName #>]
+GO
+
+<#	foreach(ITable table in Database.Tables)
+	{ ##>
+----------------------------------------------------------
+-- Stored procedures for the '<#= table.Name #>' table.
+----------------------------------------------------------
+
+-- Drop the '<#= GetGetAllProcName(table, false) #>' procedure if it already exists.
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'<#= GetGetAllProcName(table, false) #>') AND type='P')
+	DROP PROCEDURE <#= GetGetAllProcName(table, true) #>
+GO
+
+-- Gets all records from the '<#= table.Name #>' table.
+CREATE PROCEDURE <#= GetGetAllProcName(table, true) #>
+AS
+	SELECT * FROM <#= GetFullTableName(table) #>
+GO
+<#	if(GetHasPrimaryKey(table))
+	{ ##>
+
+-- Drop the '<#= GetGetByKeyProcName(table, false) #>' procedure if it already exists.
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'<#= GetGetByKeyProcName(table, false) #>') AND type='P')
+	DROP PROCEDURE <#= GetGetByKeyProcName(table, true) #>
+GO
+
+-- Gets a record from the '<#= table.Name #>' table using the primary key value.
+CREATE PROCEDURE <#= GetGetByKeyProcName(table, true) #>
+<#		bool firstGetByPKItem = true;
+		foreach(IColumn column in table.Columns.GetPrimaryColumns())
+		{ 
+			if(firstGetByPKItem)
+				firstGetByPKItem = false;
+			else
+			{ ##>,
+<#			} ##>
+	<#= GetSqlParameterName(column) #> <#= column.SqlType ##>
+<#		} #>
+AS
+	SELECT * FROM <#= GetFullTableName(table) #> WHERE
+<#		firstGetByPKItem = true;
+		foreach(IColumn column in table.Columns.GetPrimaryColumns())
+		{
+			if(firstGetByPKItem)
+				firstGetByPKItem = false;
+			else
+			{ ##> AND
+<#			} ##>
+		<#= GetSqlName(column.Name) #> = <#= GetSqlParameterName(column) ##>
+<#		} #>
+GO
+<#	} ##>
+<#	foreach(IRelation relation in table.ParentRelations)
+	{ ##>
+
+-- Drop the '<#= GetGetByForeignKeyProcName(relation, false) #>' procedure if it already exists.
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'<#= GetGetByForeignKeyProcName(relation, false) #>') AND type='P')
+	DROP PROCEDURE <#= GetGetByForeignKeyProcName(relation, true) #>
+GO
+
+-- Gets all records for the specified foreign key.
+CREATE PROCEDURE <#= GetGetByForeignKeyProcName(relation, true) #>
+<#		bool firstGetByFKItem = true;
+		foreach(IColumn column in relation.ChildColumns)
+		{ 
+			if(firstGetByFKItem)
+				firstGetByFKItem = false;
+			else
+			{ ##>,
+<#			} ##>
+	<#= GetSqlParameterName(column) #> <#= column.SqlType ##>
+<#		} #>
+AS
+<#	if(1 == relation.ChildColumns.Length)
+	{ 
+		IColumn column = relation.ChildColumns[0];
+		if(column.Nullable)
+		{ ##>
+	IF <#= GetSqlParameterName(column) ##> IS NULL
+		SELECT * FROM <#= GetFullTableName(table) #> WHERE <#= GetSqlName(column.Name) #> IS NULL
+	ELSE
+	<# /* Need for indent */ ##>
+<#		} ##>
+	SELECT * FROM <#= GetFullTableName(table) #> WHERE <#= GetSqlName(column.Name) #> = <#= GetSqlParameterName(column) #>
+<#	}
+	else	// More than 1 column in the foreign key. Use dynamic SQL.
+	{ ##>
+	DECLARE @sql		NVarChar(4000)
+	DECLARE @paramList	NVarChar(4000)
+
+	SELECT @sql = 'SELECT * FROM <#= GetFullTableName(table) #> WHERE'
+
+<#		string prefix = "";
+		foreach(IColumn column in relation.ChildColumns)
+		{
+			if(column.Nullable)
+			{ ##>
+	IF <#= GetSqlParameterName(column) ##> IS NULL
+		SELECT @sql = @sql + ' <#= prefix + GetSqlName(column.Name) #> IS NULL'
+	ELSE
+	<# /* Need for indent */ ##>
+<#			} ##>
+	SELECT @sql = @sql + ' <#= prefix + GetSqlName(column.Name) #>=<#= GetSqlParameterName(column) ##>'
+
+<#			prefix = "AND ";
+		} ##>
+	SELECT @paramList = '<#
+		prefix = "";
+		foreach(IColumn column in relation.ChildColumns)
+		{
+			Writer.Write(prefix);
+			Writer.Write(GetSqlParameterName(column));
+			Writer.Write(" ");
+			Writer.Write(column.SqlType);
+			prefix = ", ";
+		}
+		##>'
+
+	EXEC sp_executesql @sql, @paramList<#
+		foreach(IColumn column in relation.ChildColumns)
+		{
+			Writer.Write(", ");
+			Writer.Write(GetSqlParameterName(column));
+		} #>
+<#	} ##>
+GO
+<#	} // End foreach(IRelation relation in table.ParentRelations) ##>
+<#	if(table.Updatable)
+	{
+		if(0 < table.Columns.GetWriteableColumns().Length)
+		{ ##>
+
+-- Drop the '<#= GetInsertProcName(table, false) #>' procedure if it already exists.
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'<#= GetInsertProcName(table, false) #>') AND type='P')
+	DROP PROCEDURE <#= GetInsertProcName(table, true) #>
+GO
+
+-- Inserts a new record into the '<#= table.Name #>' table.
+CREATE PROCEDURE <#= GetInsertProcName(table, true) #>
+<#	bool firstInsertColumn = true;
+	foreach(IColumn column in table.Columns.GetWriteableColumns())
+	{
+		if(firstInsertColumn)
+			firstInsertColumn = false;
+		else
+		{ ##>,
+<#		} ##>
+	<#= GetSqlParameterName(column) #> <#= column.SqlType ##>
+<#	} #>
+AS
+	INSERT INTO <#= GetFullTableName(table) #>
+	(
+<#	firstInsertColumn = true;
+	foreach(IColumn column in table.Columns.GetWriteableColumns())
+	{
+		if(firstInsertColumn)
+			firstInsertColumn = false;
+		else
+		{ ##>,
+<#		} ##>
+		<#= GetSqlName(column.Name) ##>
+<#	} #>
+	)
+	VALUES
+	(
+<#	firstInsertColumn = true;
+	foreach(IColumn column in table.Columns.GetWriteableColumns())
+	{
+		if(firstInsertColumn)
+			firstInsertColumn = false;
+		else
+		{ ##>,
+<#		} ##>
+		<#= GetSqlParameterName(column) ##>
+<#	} #>
+	)
+<#	if(SharedUtils.GetGenerateIdentity(Database) && null != SharedUtils.GetIdentityColumn(table))
+	{ ##>
+	SELECT @@IDENTITY
+<#	} ##>
+GO
+<#	} // End of if(0 < table.Columns.GetWriteableColumns().Length) ##>
+<#	if(GetHasPrimaryKey(table))
+	{ 
+		if(0 < table.Columns.GetWriteableNonPrimaryColumns().Length)
+		{ ##>
+
+-- Drop the '<#= GetUpdateProcName(table, false) #>' procedure if it already exists.
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'<#= GetUpdateProcName(table, false) #>') AND type='P')
+	DROP PROCEDURE <#= GetUpdateProcName(table, true) #>
+GO
+
+-- Updates a record in the '<#= table.Name #>' table.
+CREATE PROCEDURE <#= GetUpdateProcName(table, true) #>
+	-- The rest of writeable parameters
+<#	foreach(IColumn column in table.Columns.GetWriteableNonPrimaryColumns())
+	{ ##>
+	<#= GetSqlParameterName(column) #> <#= column.SqlType #>,
+<#	} ##>
+	-- Primary key parameters
+<#	bool firstUpdateColumn = true;
+	foreach(IColumn column in table.Columns.GetPrimaryColumns())
+	{ 
+		if(firstUpdateColumn)
+			firstUpdateColumn = false;
+		else
+		{ ##>,
+<#		} ##>
+	<#= GetSqlParameterName(column) #> <#= column.SqlType ##>
+<#	} #>
+AS
+	UPDATE <#= GetFullTableName(table) #> SET
+<#	firstUpdateColumn = true;
+	foreach(IColumn column in table.Columns.GetWriteableNonPrimaryColumns())
+	{ 
+		if(firstUpdateColumn)
+			firstUpdateColumn = false;
+		else
+		{ ##>,
+<#		} ##>
+		<#= GetSqlName(column.Name) #> = <#= GetSqlParameterName(column) ##>
+<#	} #>
+	WHERE
+<#	firstUpdateColumn = true;
+	foreach(IColumn column in table.Columns.GetPrimaryColumns())
+	{
+		if(firstUpdateColumn)
+			firstUpdateColumn = false;
+		else
+		{ ##> AND
+<#		} ##>
+		<#= GetSqlName(column.Name) #> = <#= GetSqlParameterName(column) ##>
+<#	} #>
+GO
+<#		} // if(0 < GetWriteableNonPrimaryColumns) ##>
+
+-- Drop the '<#= GetDeleteByKeyProcName(table, false) #>' procedure if it already exists.
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'<#= GetDeleteByKeyProcName(table, false) #>') AND type='P')
+	DROP PROCEDURE <#= GetDeleteByKeyProcName(table, true) #>
+GO
+
+-- Deletes a record from the '<#= table.Name #>' table using the primary key value.
+CREATE PROCEDURE <#= GetDeleteByKeyProcName(table, true) #>
+<#		bool firstDeleteByPKColumn = true;
+		foreach(IColumn column in table.Columns.GetPrimaryColumns())
+		{ 
+			if(firstDeleteByPKColumn)
+				firstDeleteByPKColumn = false;
+			else
+			{ ##>,
+<#			} ##>
+	<#= GetSqlParameterName(column) #> <#= column.SqlType ##>
+<#		} #>
+AS
+	DELETE FROM <#= GetFullTableName(table) #> WHERE
+<#		firstDeleteByPKColumn = true;
+		foreach(IColumn column in table.Columns.GetPrimaryColumns())
+		{
+			if(firstDeleteByPKColumn)
+				firstDeleteByPKColumn = false;
+			else
+			{ ##> AND
+<#			} ##>
+		<#= GetSqlName(column.Name) #> = <#= GetSqlParameterName(column) ##>
+<#		} #>
+GO
+<#	} // End if(GetHasPrimaryKey(table)) ##>
+<#	foreach(IRelation relation in table.ParentRelations)
+	{ ##>
+
+-- Drop the '<#= GetDeleteByForeignKeyProcName(relation, false) #>' procedure if it already exists.
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'<#= GetDeleteByForeignKeyProcName(relation, false) #>') AND type='P')
+	DROP PROCEDURE <#= GetDeleteByForeignKeyProcName(relation, true) #>
+GO
+
+-- Delete records from the '<#= table.Name #>' table using a foreign key.
+CREATE PROCEDURE <#= GetDeleteByForeignKeyProcName(relation, true) #>
+<#		bool firstDeleteByFKColumn = true;
+		foreach(IColumn column in relation.ChildColumns)
+		{ 
+			if(firstDeleteByFKColumn)
+				firstDeleteByFKColumn = false;
+			else
+			{ ##>,
+<#			} ##>
+	<#= GetSqlParameterName(column) #> <#= column.SqlType ##>
+<#		} #>
+AS
+<#	if(1 == relation.ChildColumns.Length)
+	{ 
+		IColumn column = relation.ChildColumns[0];
+		if(column.Nullable)
+		{ ##>
+	IF <#= GetSqlParameterName(column) ##> IS NULL
+		DELETE FROM <#= GetFullTableName(table) #> WHERE <#= GetSqlName(column.Name) #> IS NULL
+	ELSE
+	<# /* Need for indent */ ##>
+<#		} ##>
+	DELETE FROM <#= GetFullTableName(table) #> WHERE <#= GetSqlName(column.Name) #> = <#= GetSqlParameterName(column) #>
+<#	}
+	else	// More than 1 column in the foreign key. Use dynamic SQL.
+	{ ##>
+	DECLARE @sql		NVarChar(4000)
+	DECLARE @paramList	NVarChar(4000)
+
+	SELECT @sql = 'DELETE FROM <#= GetFullTableName(table) #> WHERE'
+
+<#		string prefix = "";
+		foreach(IColumn column in relation.ChildColumns)
+		{
+			if(column.Nullable)
+			{ ##>
+	IF <#= GetSqlParameterName(column) ##> IS NULL
+		SELECT @sql = @sql + ' <#= prefix + GetSqlName(column.Name) #> IS NULL'
+	ELSE
+	<# /* Need for indent */ ##>
+<#			} ##>
+	SELECT @sql = @sql + ' <#= prefix + GetSqlName(column.Name) #>=<#= GetSqlParameterName(column) ##>'
+
+<#			prefix = "AND ";
+		} ##>
+	SELECT @paramList = '<#
+		prefix = "";
+		foreach(IColumn column in relation.ChildColumns)
+		{
+			Writer.Write(prefix);
+			Writer.Write(GetSqlParameterName(column));
+			Writer.Write(" ");
+			Writer.Write(column.SqlType);
+			prefix = ", ";
+		}
+		##>'
+
+	EXEC sp_executesql @sql, @paramList<#
+		foreach(IColumn column in relation.ChildColumns)
+		{
+			Writer.Write(", ");
+			Writer.Write(GetSqlParameterName(column));
+		} #>
+<#	} ##>
+GO
+<#	} ##>
+
+-- Drop the '<#= GetDeleteAllProcName(table, false) #>' procedure if it already exists.
+IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'<#= GetDeleteAllProcName(table, false) #>') AND type='P')
+	DROP PROCEDURE <#= GetDeleteAllProcName(table, true) #>
+GO
+
+-- Deletes all records from the '<#= table.Name #>' table.
+CREATE PROCEDURE <#= GetDeleteAllProcName(table, true) #>
+AS
+	DELETE FROM <#= GetFullTableName(table) #>
+GO
+
+<#	} // End foreach
+	}	// End of if(table.Updatable)
+	
+	Environment.AddInfo("The stored procedures were saved to 'Db\\" + 
+				RelativeFilePath + "'. Add them into your database before running the generated code.");
+##>
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.Data;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get
+		{
+			string suffix = SharedUtils.IsSQLServer(Database) ? "_MSSQL.sql" : "_SybaseAse.sql";
+			return @"Sql\" + Database.CodeName + suffix;
+		}
+	}
+	
+	public override bool Enabled
+	{
+		get
+		{
+			return SharedUtils.IsSQLServerOrSybaseAse(Database) &&
+				SharedUtils.GetGenerateStoredProcedures(Database);
+		}
+	}
+	
+	private string GetFullTableName(ITable table)
+	{
+		string fullName = "";
+		if(null != table.Schema && 0 < table.Schema.Length)
+			fullName += GetSqlName(table.Schema) + ".";
+		fullName += GetSqlName(table.Name);
+		return fullName;
+	}
+	
+	private static string GetSqlName(string value)
+	{
+		return "[" + value + "]";
+	}
+
+	private static string GetSqlName(string value, bool bracket)
+	{
+		return bracket ? "[" + value + "]" : value;
+	}
+	
+	internal static string GetGetAllProcName(ITable table, bool bracket)
+	{
+		return GetSqlName(table.Schema, bracket) + "." + GetSqlName("_" + table.CodeName + "_GetAll", bracket);
+	}
+	
+	internal static string GetGetByForeignKeyProcName(IRelation relation, bool bracket)
+	{
+		string procName = SharedUtils.GetColumnListName(relation.ChildColumns);
+		ITable table = relation.ChildColumns[0].Table;
+		return GetSqlName(table.Schema, bracket) + "." + GetSqlName("_" + table.CodeName + "_GetBy_" + procName, bracket);
+	}
+	
+	internal static string GetGetByKeyProcName(ITable table, bool bracket)
+	{
+		string suffix = SharedUtils.IsSQLServer(table.Database) ? "PrimaryKey" : "PK";
+		return GetSqlName(table.Schema, bracket) + "." + GetSqlName("_" + table.CodeName + "_GetBy" + suffix, bracket);
+	}
+	
+	internal static string GetInsertProcName(ITable table, bool bracket)
+	{
+		return GetSqlName(table.Schema, bracket) + "." + GetSqlName("_" + table.CodeName + "_Insert", bracket);
+	}
+	
+	internal static string GetUpdateProcName(ITable table, bool bracket)
+	{
+		return GetSqlName(table.Schema, bracket) + "." + GetSqlName("_" + table.CodeName + "_Update", bracket);
+	}
+
+	internal static string GetDeleteByKeyProcName(ITable table, bool bracket)
+	{
+		string suffix = SharedUtils.IsSQLServer(table.Database) ? "PrimaryKey" : "PK";
+		return GetSqlName(table.Schema, bracket) + "." + GetSqlName("_" + table.CodeName + "_DeleteBy" + suffix, bracket);
+	}
+
+	internal static string GetDeleteByForeignKeyProcName(IRelation relation, bool bracket)
+	{
+		string procName = SharedUtils.GetColumnListName(relation.ChildColumns);
+		ITable table = relation.ChildColumns[0].Table;
+		return GetSqlName(table.Schema, bracket) + "." + GetSqlName("_" + table.CodeName + "_DeleteBy_" + procName, bracket);
+	}
+
+	internal static string GetDeleteAllProcName(ITable table, bool bracket)
+	{
+		return GetSqlName(table.Schema, bracket) + "." + GetSqlName("_" + table.CodeName + "_DeleteAll", bracket);
+	}
+	
+	private bool GetHasPrimaryKey(ITable table)
+	{
+		return 0 < table.Columns.GetPrimaryColumns().Length;
+	}
+	
+	private string GetSqlParameterName(IColumn column)
+	{
+		return "@" + column.CodeName;
+	}
+##>

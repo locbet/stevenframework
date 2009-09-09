@@ -1,0 +1,231 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+// <fileinfo name="<#= RelativeFilePath #>">
+//		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "//			"); ##>
+//		</copyright>
+//		<remarks>
+//			Do not change this source code manually. Changes to this file may 
+//			cause incorrect behavior and will be lost if the code is regenerated.
+//		</remarks>
+//		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+// </fileinfo>
+
+using System;
+using System.Data;
+
+namespace <#= GetNamespace() #>
+{
+	/// <summary>
+	/// The base class for <see cref="StoredProcedures"/>.
+	/// </summary>
+	/// <remarks>
+	/// Do not change this source code. Update the <see cref="StoredProcedures"/>
+	/// class if you need to add or change some functionality.
+	/// </remarks>
+	public abstract class StoredProcedures_Base
+	{
+		private <#= GetDbClassName() #> _db;
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="StoredProcedures_Base"/> 
+		/// class with the specified <see cref="<#= GetDbClassName() #>"/>.
+		/// </summary>
+		/// <param name="db">The <see cref="<#= GetDbClassName() #>"/> object.</param>
+		public StoredProcedures_Base(<#= GetDbClassName() #> db)
+		{
+			_db = db;
+		}
+
+		/// <summary>
+		/// Gets the database object.
+		///	</summary>
+		///	<value>The <see cref="<#= GetDbClassName() #>"/> object.</value>
+		public <#= GetDbClassName() #> Database
+		{
+			get { return _db; }
+		}
+
+		/// <summary>
+		/// Retrieves data from DB using the specified command and returns 
+		/// results in a <see cref="System.Data.DataTable"/> object.
+		/// </summary>
+		/// <param name="command">The command to retrieve data.</param>
+		/// <returns>A reference to the <see cref="System.Data.DataTable"/> object.</returns>
+		protected DataTable CreateDataTable(IDbCommand command)
+		{
+			return _db.CreateDataTable(command);
+		}
+<#		foreach(IStoredProcedure procedure in Database.StoredProcedures)
+		{ ##>
+
+		/// <summary>
+		/// Creates a command object that can be used to call 
+		/// the <#= procedure.Name #> stored procedure.
+		/// </summary>
+<#		foreach(IParameter parameter in procedure.Parameters)
+		{ ##>
+		/// <param name="<#= parameter.CodeName #>"><#= GetParameterDescription(parameter) #></param>
+<#		} ##>
+		/// <returns>A reference to the <see cref="System.Data.IDbCommand"/> object.</returns>
+		public virtual IDbCommand <#= procedure.CodeName #>_Command(<# WriteWrapperMethodParameters(procedure, false); #>)
+		{
+			IDbCommand cmd = _db.CreateCommand("<#= procedure.Name #>", true);
+<#			foreach(IParameter parameter in procedure.Parameters)
+			{ ##>
+			_db.AddParameter(cmd, "<#= parameter.CodeName #>", DbType.<#= 
+				parameter.DbType.ToString() #>, <#= GetParameterName(parameter, true) #>)<#
+				if(parameter.Direction == ParameterDirection.InputOutput)
+					Writer.Write(".Direction = ParameterDirection.InputOutput");
+				else if(parameter.Direction == ParameterDirection.Output)
+					Writer.Write(".Direction = ParameterDirection.Output");
+			  ##>;
+<#			} ##>
+			return cmd;
+		}
+
+		/// <summary>
+		/// Invokes the <#= procedure.Name #> stored procedure and
+		/// returns output in a DataTable object.
+		/// </summary>
+<#		foreach(IParameter parameter in procedure.Parameters)
+		{ ##>
+		/// <param name="<#= parameter.CodeName #>"><#= GetParameterDescription(parameter) #></param>
+<#		} ##>
+		/// <returns>A reference to the <see cref="System.Data.DataTable"/> object.</returns>
+		public virtual DataTable <#= procedure.CodeName #>_DataTable(<# WriteWrapperMethodParameters(procedure, true); #>)
+		{
+			IDbCommand cmd = <#= procedure.CodeName #>_Command(<#
+				bool first = true;
+				foreach(IParameter parameter in procedure.Parameters)
+				{
+					if(first)
+						first = false;
+					else
+						Writer.Write(", ");
+					Writer.Write(GetParameterName(parameter, true));
+				}
+			#>);
+			DataTable dataTable = CreateDataTable(cmd);
+<#			for(int i = 0; i < procedure.Parameters.Count; i++)
+			{
+				IParameter parameter = procedure.Parameters[i];
+				if(parameter.Direction == ParameterDirection.Output || parameter.Direction == ParameterDirection.InputOutput)
+				{ ##>
+			<#= GetParameterName(parameter, true) #> = <#= GetConvertToCode(parameter, i) #>;
+<#				}
+			} ##>
+			return dataTable;
+		}
+<#	} ##>
+	}
+}
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.Collections.Specialized;
+using System.Text;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return "StoredProcedures_Base.cs"; }
+	}
+
+	public override bool Enabled
+	{
+		get { return SharedUtils.GenerateStoredProcedureWrapper(Database); }
+	}
+
+	private string GetNamespace()
+	{
+		return SharedUtils.GetDbTierBaseNamespace(Database);
+	}
+	
+	private string GetDbClassName()
+	{
+		return Database.CodeName;
+	}
+
+	private string GetParameterDescription(IParameter parameter)
+	{
+		string description = parameter.Description;
+		if(null == description || 0 == description.Length)
+			return "The <c>" + parameter.CodeName + "</c> parameter.";
+		if(!description.EndsWith("."))
+			description += ".";
+		return description;
+	}
+	
+	private string GetParameterName(IParameter parameter, bool checkForKeyword)
+	{
+		return SharedUtils.GetParameterName(parameter.CodeName, checkForKeyword);
+	}
+	
+	private string GetDotNetTypeName(IParameter parameter)
+	{
+		return SharedUtils.GetCSharpTypeName(SharedUtils.ToDotNetType(parameter.OleDbType));
+	}
+	
+	private string GetConvertToCode(IParameter parameter, int paramIndex)
+	{
+		string code = "";
+		bool convert = false;
+		Type parameterType = SharedUtils.ToDotNetType(parameter.OleDbType);
+		if(parameterType == typeof(byte[]))
+			code = "(byte[])";
+		else if(parameterType == typeof(TimeSpan))
+			code = "(TimeSpan)";
+		else if(parameterType == typeof(Guid))
+			code = "(Guid)";
+		else if(parameterType != typeof(object))
+		{
+			convert = true;
+			code = "Convert.To" + parameterType.Name + "(";
+		}
+	
+		code += "((IDbDataParameter)cmd.Parameters[" + paramIndex + "]).Value";
+		if(convert)
+			code += ")";
+		return code;
+	}
+	
+	private void WriteWrapperMethodParameters(IStoredProcedure procedure, bool writeOutRef)
+	{
+		bool first = true;
+		foreach(IParameter parameter in procedure.Parameters)
+		{
+			string outPrefix = "";
+			if(writeOutRef)
+			{
+				if(parameter.Direction == ParameterDirection.Output)
+					outPrefix = "out ";
+				else if(parameter.Direction == ParameterDirection.InputOutput)
+					outPrefix = "ref ";
+			}
+
+			if(first)
+				first = false;
+			else
+				Writer.Write(", ");
+				
+			Writer.Write(outPrefix);
+			Writer.Write(GetDotNetTypeName(parameter));
+			Writer.Write(" ");
+			Writer.Write(GetParameterName(parameter, true));			
+		}
+	}
+##>
