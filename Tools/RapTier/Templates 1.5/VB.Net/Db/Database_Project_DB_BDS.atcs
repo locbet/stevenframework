@@ -1,0 +1,186 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+  <PersonalityInfo>
+    <Option>
+      <Option Name="Personality" Type="String">VB.Personality</Option>
+      <Option Name="ProjectType" Type="String">Application</Option>
+      <Option Name="Version" Type="String">1.0</Option>
+      <Option Name="GUID" Type="String"><#= GetDbProjectId() #></Option>
+    </Option>
+  </PersonalityInfo>
+  <VB.Personality>
+    <Options>
+      <SelectedOptionSet>
+        <SelectedOptionSet Name="OptionsSet" Type="String">Debug</SelectedOptionSet>
+      </SelectedOptionSet>
+      <OptionsSet Name="Release">
+        <Options>
+          <Options Name="Warning" Type="Boolean">True</Options>
+          <Options Name="DefaultNamespace" Type="String"><#= SharedUtils.GetBaseDbTierNamespace(Database) #></Options>
+          <Options Name="DebugInformation" Type="Boolean">False</Options>
+          <Options Name="Optimization" Type="Boolean">True</Options>
+          <Options Name="Overflow" Type="Boolean">False</Options>
+          <Options Name="ivUnsafe" Type="Boolean">False</Options>
+          <Options Name="WarningAsError" Type="Boolean">False</Options>
+          <Options Name="Defines" Type="String">TRACE=True</Options>
+          <Options Name="TargetName" Type="String"><#= SharedUtils.GetBaseDbTierNamespace(Database) #>.dll</Options>
+          <Options Name="TargetType" Type="String">Assembly</Options>
+          <Options Name="Main" Type="String"></Options>
+          <Options Name="BaseAddress" Type="String">285212672</Options>
+          <Options Name="BuildInOutput" Type="Boolean">False</Options>
+          <Options Name="OutputDirectory" Type="String"></Options>
+          <Options Name="RunParams" Type="String"></Options>
+          <Options Name="HostApplication" Type="String"></Options>
+          <Options Name="Launcher" Type="String"></Options>
+          <Options Name="UseLauncher" Type="Boolean">False</Options>
+          <Options Name="DebugCWD" Type="String"></Options>
+          <Options Name="RemotePath" Type="String"></Options>
+          <Options Name="RemoteHost" Type="String"></Options>
+          <Options Name="RemoteLauncher" Type="String"></Options>
+          <Options Name="RemoteDebug" Type="Boolean">False</Options>
+          <Options Name="RemoteCWD" Type="String"></Options>
+          <Options Name="AspNetUseHostServer" Type="Boolean">False</Options>
+          <Options Name="AspNetLaunchBrowser" Type="Boolean">False</Options>
+          <Options Name="AspNetStartPage" Type="String"></Options>
+          <Options Name="AspNetHostServer" Type="String">IIS</Options>
+          <Options Name="AspNetCassiniVirtualDirectory" Type="String"></Options>
+          <Options Name="AspNetIISVirtualDirectory" Type="String"></Options>
+          <Options Name="AspNetHTTPAddress" Type="String"></Options>
+        </Options>
+      </OptionsSet>
+      <OptionsSet Name="Debug">
+        <Options>
+          <Options Name="Warning" Type="Boolean">True</Options>
+          <Options Name="DefaultNamespace" Type="String"><#= SharedUtils.GetBaseDbTierNamespace(Database) #></Options>
+          <Options Name="DebugInformation" Type="Boolean">True</Options>
+          <Options Name="Optimization" Type="Boolean">False</Options>
+          <Options Name="Overflow" Type="Boolean">False</Options>
+          <Options Name="ivUnsafe" Type="Boolean">False</Options>
+          <Options Name="WarningAsError" Type="Boolean">False</Options>
+          <Options Name="Defines" Type="String">TRACE=True,DEBUG=True</Options>
+          <Options Name="TargetName" Type="String"><#= SharedUtils.GetBaseDbTierNamespace(Database) #>.dll</Options>
+          <Options Name="TargetType" Type="String">Assembly</Options>
+          <Options Name="Main" Type="String"></Options>
+          <Options Name="BaseAddress" Type="String">285212672</Options>
+          <Options Name="BuildInOutput" Type="Boolean">False</Options>
+          <Options Name="OutputDirectory" Type="String"></Options>
+          <Options Name="RunParams" Type="String"></Options>
+          <Options Name="HostApplication" Type="String"></Options>
+          <Options Name="Launcher" Type="String"></Options>
+          <Options Name="UseLauncher" Type="Boolean">False</Options>
+          <Options Name="DebugCWD" Type="String"></Options>
+          <Options Name="RemotePath" Type="String"></Options>
+          <Options Name="RemoteHost" Type="String"></Options>
+          <Options Name="RemoteLauncher" Type="String"></Options>
+          <Options Name="RemoteDebug" Type="Boolean">False</Options>
+          <Options Name="RemoteCWD" Type="String"></Options>
+          <Options Name="AspNetUseHostServer" Type="Boolean">False</Options>
+          <Options Name="AspNetLaunchBrowser" Type="Boolean">False</Options>
+          <Options Name="AspNetStartPage" Type="String"></Options>
+          <Options Name="AspNetHostServer" Type="String">IIS</Options>
+          <Options Name="AspNetCassiniVirtualDirectory" Type="String"></Options>
+          <Options Name="AspNetIISVirtualDirectory" Type="String"></Options>
+          <Options Name="AspNetHTTPAddress" Type="String"></Options>
+        </Options>
+      </OptionsSet>
+    </Options>
+    <FileList>
+      <File FileName="System.dll" ContainerId="DotNetAssemblyCompiler" ModuleName="System" AssemblyName="System"/>
+      <File FileName="System.Data.dll" ContainerId="DotNetAssemblyCompiler" ModuleName="System.Data" AssemblyName="System.Data"/>
+
+      <File FileName="AssemblyInfo.vb" ContainerId="VBTool" ModuleName="AssemblyInfo"/>
+      <File FileName="<#= SharedUtils.GetBaseClassRelativePath(Database.CodeName + "_Base.vb") #>" ContainerId="VBTool" ModuleName="<#= SharedUtils.GetBaseClassRelativePath(Database.CodeName + "_Base") #>"/>
+      <File FileName="<#= SharedUtils.GetUserClassRelativePath(Database.CodeName + ".vb") #>" ContainerId="VBTool" ModuleName="<#= SharedUtils.GetBaseClassRelativePath(Database.CodeName) #>"/>
+<#		foreach(ITable table in Database.Tables)
+		{ ##>
+      <File FileName="<#= SharedUtils.GetBaseClassRelativePath(table.CodeName + "Row_Base.vb") #>" ContainerId="VBTool" ModuleName="<#= SharedUtils.GetBaseClassRelativePath(table.CodeName + "Row_Base") #>"/>
+      <File FileName="<#= SharedUtils.GetUserClassRelativePath(table.CodeName + "Row.vb") #>" ContainerId="VBTool" ModuleName="<#= SharedUtils.GetBaseClassRelativePath(table.CodeName + "Row") #>"/>
+      <File FileName="<#= SharedUtils.GetBaseClassRelativePath(SharedUtils.GetGatewayClassName(table) + "_Base.vb") #>" ContainerId="VBTool" ModuleName="<#= SharedUtils.GetBaseClassRelativePath(SharedUtils.GetGatewayClassName(table) + "_Base") #>"/>
+      <File FileName="<#= SharedUtils.GetUserClassRelativePath(SharedUtils.GetGatewayClassName(table) + ".vb") #>" ContainerId="VBTool" ModuleName="<#= SharedUtils.GetBaseClassRelativePath(SharedUtils.GetGatewayClassName(table)) #>"/>
+<#		} ##>
+<#	if(SharedUtils.GenerateStoredProcedureWrapper(Database))
+	{ ##>
+      <File FileName="<#= SharedUtils.GetBaseClassRelativePath("StoredProcedures_Base.vb") #>" ContainerId="VBTool" ModuleName="<#= SharedUtils.GetBaseClassRelativePath("StoredProcedures_Base") #>"/>
+      <File FileName="<#= SharedUtils.GetUserClassRelativePath("StoredProcedures.vb") #>" ContainerId="VBTool" ModuleName="<#= SharedUtils.GetBaseClassRelativePath("StoredProcedures") #>"/>
+<#	} ##>
+<#		if(SharedUtils.GetGenerateStoredProcedures(Database))
+		{
+			if(SharedUtils.IsSQLServerOrSybaseAse(Database))
+			{
+				string suffix = SharedUtils.IsSQLServer(Database) ? "_MSSQL.sql" : "_SybaseAse.sql";
+			  ##>
+      <File FileName="Sql\<#= Database.CodeName + suffix #>" ContainerId="" ModuleName="Sql\<#= Database.CodeName #>_MSSQL"/>
+<#			}
+			else if(SharedUtils.IsOracle(Database))
+			{ ##>
+      <File FileName="Sql\<#= Database.CodeName #>_PackageBody_Oracle.sql" ContainerId="" ModuleName="Sql\<#= Database.CodeName #>_PackageBody_Oracle"/>
+      <File FileName="Sql\<#= Database.CodeName #>_PackageDeclaration_Oracle.sql" ContainerId="" ModuleName="Sql\<#= Database.CodeName #>_PackageDeclaration_Oracle"/>
+<#			}
+		} ##>
+    </FileList>
+  </VB.Personality>
+</BorlandProject>
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.IO;
+using System.Text;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override bool Enabled
+	{
+		get { return TargetIDE.StartsWith("BDS"); }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return "Db.bdsproj"; }
+	}
+	
+	private string GetProjectId(string key)
+	{
+		string value = (string)Environment.Session[key];
+		if(null == value)
+		{
+			value = Guid.NewGuid().ToString("B").ToUpper();
+			Environment.Session[key] = value;
+		}
+		return value;
+	}
+
+	private string GetDbProjectId()
+	{
+		return GetProjectId("VSDbProjectId");
+	}
+
+	private string GetSystemHintPath(string assemblyFile)
+	{
+		string frameworkDir = Path.GetDirectoryName(typeof(string).Assembly.Location);
+		return Path.Combine(frameworkDir, assemblyFile);
+	}
+	
+	private string TargetIDE
+	{
+		get { return Database.ExtendedProperties["TargetIDE"]; }
+	}
+##>
