@@ -10,10 +10,11 @@
 //			Do not change this source code manually. Changes to this file may 
 //			cause incorrect behavior and will be lost if the code is regenerated.
 //		</remarks>
-//		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+//		<generator rewritefile="<#= RewriteExistingFile #>">Steven</generator>
 // </fileinfo>
 
 using System;
+using System.Data;
 
 namespace <#= GetNamespace() #>
 {
@@ -25,7 +26,7 @@ namespace <#= GetNamespace() #>
 	/// Do not change this source code manually. Update the <see cref="<#= GetUserClassName() #>"/>
 	/// class if you need to add or change some functionality.
 	/// </remarks>
-	public abstract class <#= GetClassName() #>
+	public class <#= GetClassName() #>
 	{
 <#		foreach(IColumn column in Table.Columns)
 		{ ##>
@@ -94,31 +95,25 @@ namespace <#= GetNamespace() #>
 
 <#		} ##>
 		/// <summary>
-		/// Returns the string representation of this instance.
+		/// Returns <#= GetClassName() #> of this instance.
 		/// </summary>
-		/// <returns>The string representation of this instance.</returns>
-		public override string ToString()
+		/// <returns><#= GetClassName() #> of this instance.</returns>
+		public static <#= GetClassName() #> SetValue(IDataReader reader)
 		{
-			System.Text.StringBuilder dynStr = new System.Text.StringBuilder(GetType().Name);
-			dynStr.Append(':');
-<#			foreach(IColumn column in Table.Columns)
-			{ 
-				if(!GetDotNetType(column).IsArray)
-				{ ##>
-			dynStr.Append("  <#= GetPropertyName(column) #>=");
-<#					if(ShouldGenerateNullableProperty(column))
-					{ ##>
-			dynStr.Append(Is<#= GetPropertyName(column) #>Null ? (object)"<NULL>" : <#= GetPropertyName(column) #>);
-<#					}
-					else
-					{ ##>
-			dynStr.Append(<#= GetPropertyName(column) #>);
-<#					}
-				}
-			}
-##>
-			return dynStr.ToString();
-		}
+			<#= GetClassName() #> info = new <#= GetClassName() #>();
+			<#			foreach(IColumn column in Table.Columns)
+						{ ##>
+int <#= GetColumnIndexVariableName(column) #> = reader.GetOrdinal("<#= column.Name #>");
+			<#			} ##>
+			
+			<#					foreach(IColumn column in Table.Columns)
+								{
+									if(column.Nullable)
+									{ ##>
+	if(!reader.IsDBNull(<#=GetColumnIndexVariableName(column)#>))
+				<#					} ##>
+info.<#= GetFieldName(column) #> = <#= GetReaderCode(column) #>;
+	  <#            }##>}
 	} // End of <#= GetClassName() #> class
 } // End of namespace
 <#--
@@ -140,12 +135,12 @@ using SharpPower.DbDom;
 
 	public override string RelativeFilePath
 	{
-		get { return SharedUtils.GetBaseClassRelativePath(GetClassName() + ".cs"); }
+		get { return SharedUtils.GetBaseClassRelativePath("Entities\\" + GetClassName() + ".cs"); }
 	}
 
 	private string GetClassName()
 	{
-		return Table.CodeName + "Row_Base";
+		return Table.CodeName + "Info";
 	}
 	
 	private string GetUserClassName()
@@ -181,10 +176,37 @@ using SharpPower.DbDom;
 	private string GetTableView()
 	{
 		return Table.View ? "view" : "table";
-	}
-	
+	}	
 	private string GetNamespace()
 	{
 		return SharedUtils.GetDbTierBaseNamespace(Table.Database);
+	}
+	private string GetColumnIndexVariableName(IColumn column)
+	{
+		return SharedUtils.GetParameterName(column.CodeName, false) + "ColumnIndex";
+	}
+    private string GetReaderCode(IColumn column)
+	{
+		string cast = "";
+		string converter = "";
+		string method = "GetValue";
+		
+		Type columnType = GetDotNetType(column);
+		if(columnType == typeof(byte[]))
+			cast = "(byte[])";
+		else if(columnType == typeof(TimeSpan))
+			cast = "(TimeSpan)";
+		else if(columnType == typeof(Guid))
+			method = "GetGuid";
+		else if(columnType != typeof(object))
+		{
+			method = "GetValue";
+			converter = "Convert.To" + columnType.Name + "(";
+		}
+
+		string code = cast + converter + "reader." + method + "(" + GetColumnIndexVariableName(column) + ")";
+		if(0 < converter.Length)
+			code += ")";
+		return code;
 	}
 ##>
