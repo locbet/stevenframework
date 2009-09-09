@@ -112,8 +112,9 @@ int <#= GetColumnIndexVariableName(column) #> = reader.GetOrdinal("<#= column.Na
 									{ ##>
 	if(!reader.IsDBNull(<#=GetColumnIndexVariableName(column)#>))
 				<#					} ##>
-info.<#= GetFieldName(column) #> = <#= GetReaderCode(column) #>;
-	  <#            }##>}
+info.<#= GetPropertyName(column) #> = <#= GetReaderCode(column) #>;
+	  <#            }##>return info;
+	  }
 	} // End of <#= GetClassName() #> class
 } // End of namespace
 <#--

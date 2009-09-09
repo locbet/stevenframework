@@ -19,7 +19,7 @@ namespace BusinessLibrary.Core
             {
                 if (string.IsNullOrEmpty(_connectionstring))
                 {
-                    _connectionstring = System.Configuration.ConfigurationManager.ConnectionStrings["Test"].ConnectionString;
+                    _connectionstring = System.Configuration.ConfigurationManager.ConnectionStrings["TestRapTier"].ConnectionString;
                 }
                 return _connectionstring;
             }

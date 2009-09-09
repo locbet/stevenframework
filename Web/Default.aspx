@@ -9,7 +9,14 @@
 <body>
     <form id="form1" runat="server">
     <div>
-    
+    <table>
+    <tr><td><asp:Label ID="lblID" runat="server"></asp:Label></td></tr>
+    <tr><td><asp:Label ID="lblUserName" runat="server"></asp:Label></td></tr>
+    <tr><td><asp:Label ID="lblPassWord" runat="server"></asp:Label></td></tr>
+    <tr><td><asp:Label ID="lblMemo" runat="server"></asp:Label></td></tr>
+    <tr><td><asp:Label ID="lblUserCount" runat="server"></asp:Label></td></tr>
+    </table>
+        
     </div>
     </form>
 </body>
