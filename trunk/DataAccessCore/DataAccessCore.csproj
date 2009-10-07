@@ -50,7 +50,7 @@
     <Compile Include="Base\BaseStaticHelper.cs" />
     <Compile Include="Base\AbsConnString.cs" />
     <Compile Include="TestHelper.cs" />
-    <Compile Include="ConnString\TestConnString.cs" />
+    <Compile Include="ConnString\TestRapTierConnString.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestStaticHelper.cs" />
   </ItemGroup>
