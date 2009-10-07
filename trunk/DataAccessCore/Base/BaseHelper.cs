@@ -1,14 +1,26 @@
-﻿using System;
+﻿/**************************************************
+ * 功能:基类实现数据库操作的底层应用
+ * 创建时间：2009-9-30
+ * 创建者:steven
+ * ************************************************
+ */
+using System;
 using System.Data.SqlClient;
 using System.Data;
 
 namespace DataAccessCore.Base
 {
+    /// <summary>
+    /// 数据库操作基类
+    /// </summary>
     public class BaseHelper : IDisposable
     {
         private int _timeout = 30;
         private IDbConnection _dbconnection;
-
+        /// <summary>
+        /// 实现构造函数
+        /// </summary>
+        /// <param name="conn">必须是集成自AbsConnString的类</param>
         public BaseHelper(AbsConnString conn)
         {
             _timeout = conn.TimeOut;
@@ -189,8 +201,6 @@ namespace DataAccessCore.Base
                 _dbconnection.Close();
             }
         }
-
-
         public void Dispose()
         {
             Close();

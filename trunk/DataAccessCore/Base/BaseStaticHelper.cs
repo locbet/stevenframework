@@ -1,9 +1,19 @@
-﻿using System;
+﻿/**************************************************
+ * 功能:静态抽象类实现数据库操作的底层应用
+ * 创建时间：2009-9-30
+ * 创建者:steven
+ * ************************************************
+ */
+using System;
 using System.Data.SqlClient;
 using System.Data;
 
 namespace DataAccessCore.Base
 {
+    /// <summary>
+    /// 静态数据库操作类
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public abstract class BaseStaticHelper<T> where T : AbsConnString, new()
     {
         //Database connection strings
