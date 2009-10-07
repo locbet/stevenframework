@@ -137,7 +137,7 @@ namespace DataAccessCore.Base
 
             cmd.CommandType = cmdType;
 
-            if (cmdParms != null)
+            if (cmdParms != null && cmdParms.Length > 0)
             {
                 foreach (IDbDataParameter parm in cmdParms)
                     cmd.Parameters.Add(parm);
