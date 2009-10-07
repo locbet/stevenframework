@@ -10,7 +10,7 @@ EndProject
 Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Web", "Web", "{B26A08CC-05C1-4579-9097-CB767E8102EE}"
 	ProjectSection(WebsiteProperties) = preProject
 		TargetFramework = "3.5"
-		ProjectReferences = "{3B1AE60B-1389-495C-A38B-E0FDB39FA0D2}|BusinessLibrary.dll;{078D215B-2E66-4450-9157-349E023CE51E}|Common.dll;{080869DE-2307-4988-9444-CBC1B1F6173E}|Entity.dll;"
+		ProjectReferences = "{3B1AE60B-1389-495C-A38B-E0FDB39FA0D2}|BusinessLibrary.dll;{078D215B-2E66-4450-9157-349E023CE51E}|Common.dll;{080869DE-2307-4988-9444-CBC1B1F6173E}|Entity.dll;{590D631E-6503-4CFC-AB50-7FE433C7782F}|DataAccessCore.dll;"
 		Debug.AspNetCompiler.VirtualPath = "/Web"
 		Debug.AspNetCompiler.PhysicalPath = "Web\"
 		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\Web\"
@@ -28,6 +28,8 @@ Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Web", "Web", "{B26A08CC-05C
 		VWDPort = "1391"
 		DefaultWebSiteLanguage = "Visual C#"
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataAccessCore", "DataAccessCore\DataAccessCore.csproj", "{590D631E-6503-4CFC-AB50-7FE433C7782F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{B26A08CC-05C1-4579-9097-CB767E8102EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B26A08CC-05C1-4579-9097-CB767E8102EE}.Release|Any CPU.ActiveCfg = Debug|Any CPU
 		{B26A08CC-05C1-4579-9097-CB767E8102EE}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{590D631E-6503-4CFC-AB50-7FE433C7782F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{590D631E-6503-4CFC-AB50-7FE433C7782F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{590D631E-6503-4CFC-AB50-7FE433C7782F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{590D631E-6503-4CFC-AB50-7FE433C7782F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
