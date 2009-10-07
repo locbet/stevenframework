@@ -5,11 +5,11 @@ namespace DataAccessCore
 {
     public class TestHelper : Base.BaseHelper
     {
-        private ConnString.TestConnString connstringclass;
+        private static ConnString.TestConnString connstringclass = new DataAccessCore.ConnString.TestConnString();
         public TestHelper()
+            : base(connstringclass)
         {
-            connstringclass = new ConnString.TestConnString();
-            base.InitConection(connstringclass.ConnectionString);
+
         }
         public void SetParameter(IDataParameter parameter, object value)
         {
