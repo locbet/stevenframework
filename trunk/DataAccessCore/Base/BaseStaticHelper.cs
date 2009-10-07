@@ -4,21 +4,10 @@ using System.Data;
 
 namespace DataAccessCore.Base
 {
-    public abstract class BaseStaticHelper<T> where T : IConnString, new()
+    public abstract class BaseStaticHelper<T> where T : AbsConnString, new()
     {
         //Database connection strings
-        private static string connectionString;
-        public BaseStaticHelper()
-        {
-
-        }
-        static BaseStaticHelper()
-        {
-            T connstring = new T();
-            connectionString = connstring.ConnectionString;
-        }
-
-
+        private static T connectionString = new T();
         /// <summary>
         /// Execute a SqlCommand (that returns no resultset) against the database specified in the connection string 
         /// using the provided parameters.
@@ -37,7 +26,7 @@ namespace DataAccessCore.Base
 
             SqlCommand cmd = new SqlCommand();
 
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(connectionString.ConnectionString))
             {
                 PrepareCommand(cmd, conn, null, cmdType, cmdText, commandParameters);
                 int val = cmd.ExecuteNonQuery();
@@ -55,7 +44,7 @@ namespace DataAccessCore.Base
         public static DataTable ExecuteTable(CommandType cmdType, string cmdText, params IDbDataParameter[] commandParameters)
         {
             SqlCommand cmd = new SqlCommand();
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionString.ConnectionString))
             {
                 PrepareCommand(cmd, connection, null, cmdType, cmdText, commandParameters);
                 DataSet st = new DataSet();
@@ -83,7 +72,7 @@ namespace DataAccessCore.Base
         {
             SqlCommand cmd = new SqlCommand();
 
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionString.ConnectionString))
             {
                 PrepareCommand(cmd, connection, null, cmdType, cmdText, commandParameters);
                 object val = cmd.ExecuteScalar();

@@ -1,13 +1,13 @@
 ﻿namespace DataAccessCore.ConnString
 {
-    public class TestConnString:Base.IConnString
+    public class TestConnString : Base.AbsConnString
     {
         public TestConnString()
         {
 
         }
         private string _connectionstring;
-        public string ConnectionString
+        public override string ConnectionString
         {
             get
             {

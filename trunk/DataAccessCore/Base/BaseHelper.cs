@@ -6,16 +6,14 @@ namespace DataAccessCore.Base
 {
     public class BaseHelper : IDisposable
     {
-        public BaseHelper()
-        {
-           
-        }
-        public void InitConection(string connstring)
-        {
-            _dbconnection = new SqlConnection(connstring);
-        }
         private int _timeout = 30;
         private IDbConnection _dbconnection;
+
+        public BaseHelper(AbsConnString conn)
+        {
+            _timeout = conn.TimeOut;
+            _dbconnection = new SqlConnection(conn.ConnectionString);
+        }
         private IDbCommand CreateCommand()
         {
             IDbCommand cmd = _dbconnection.CreateCommand();

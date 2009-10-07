@@ -48,7 +48,7 @@
   <ItemGroup>
     <Compile Include="Base\BaseHelper.cs" />
     <Compile Include="Base\BaseStaticHelper.cs" />
-    <Compile Include="Base\IConnString.cs" />
+    <Compile Include="Base\AbsConnString.cs" />
     <Compile Include="TestHelper.cs" />
     <Compile Include="ConnString\TestConnString.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
