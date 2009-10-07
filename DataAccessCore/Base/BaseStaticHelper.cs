@@ -26,7 +26,7 @@ namespace DataAccessCore.Base
 
             SqlCommand cmd = new SqlCommand();
 
-            using (SqlConnection conn = new SqlConnection(connectionString.ConnectionString))
+            using (SqlConnection conn = new SqlConnection())
             {
                 PrepareCommand(cmd, conn, null, cmdType, cmdText, commandParameters);
                 int val = cmd.ExecuteNonQuery();
@@ -44,7 +44,7 @@ namespace DataAccessCore.Base
         public static DataTable ExecuteTable(CommandType cmdType, string cmdText, params IDbDataParameter[] commandParameters)
         {
             SqlCommand cmd = new SqlCommand();
-            using (SqlConnection connection = new SqlConnection(connectionString.ConnectionString))
+            using (SqlConnection connection = new SqlConnection())
             {
                 PrepareCommand(cmd, connection, null, cmdType, cmdText, commandParameters);
                 DataSet st = new DataSet();
@@ -72,7 +72,7 @@ namespace DataAccessCore.Base
         {
             SqlCommand cmd = new SqlCommand();
 
-            using (SqlConnection connection = new SqlConnection(connectionString.ConnectionString))
+            using (SqlConnection connection = new SqlConnection())
             {
                 PrepareCommand(cmd, connection, null, cmdType, cmdText, commandParameters);
                 object val = cmd.ExecuteScalar();
@@ -124,12 +124,13 @@ namespace DataAccessCore.Base
         /// <param name="cmdParms">SqlParameters to use in the command</param>
         private static void PrepareCommand(SqlCommand cmd, SqlConnection conn, SqlTransaction trans, CommandType cmdType, string cmdText, IDbDataParameter[] cmdParms)
         {
+            conn.ConnectionString = connectionString.ConnectionString;
 
             if (conn.State != ConnectionState.Open)
                 conn.Open();
-
             cmd.Connection = conn;
             cmd.CommandText = cmdText;
+            cmd.CommandTimeout = connectionString.TimeOut;
 
             if (trans != null)
                 cmd.Transaction = trans;

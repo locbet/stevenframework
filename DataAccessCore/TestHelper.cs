@@ -5,9 +5,9 @@ namespace DataAccessCore
 {
     public class TestHelper : Base.BaseHelper
     {
-        private static ConnString.TestConnString connstringclass = new DataAccessCore.ConnString.TestConnString();
+        private static ConnString.TestRapTierConnString conn = new DataAccessCore.ConnString.TestRapTierConnString();
         public TestHelper()
-            : base(connstringclass)
+            : base(conn)
         {
 
         }

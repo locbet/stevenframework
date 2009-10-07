@@ -1,8 +1,8 @@
 ﻿namespace DataAccessCore.ConnString
 {
-    public class TestConnString : Base.AbsConnString
+    public class TestRapTierConnString : Base.AbsConnString
     {
-        public TestConnString()
+        public TestRapTierConnString()
         {
 
         }

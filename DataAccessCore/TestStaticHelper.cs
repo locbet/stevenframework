@@ -1,7 +1,7 @@
 ﻿
 namespace DataAccessCore
 {
-    public class TestStaticHelper : Base.BaseStaticHelper<ConnString.TestConnString>
+    public class TestStaticHelper : Base.BaseStaticHelper<ConnString.TestRapTierConnString>
     {
     }
 }
