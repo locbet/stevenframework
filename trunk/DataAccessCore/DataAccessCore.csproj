@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{3B1AE60B-1389-495C-A38B-E0FDB39FA0D2}</ProjectGuid>
+    <ProjectGuid>{590D631E-6503-4CFC-AB50-7FE433C7782F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BusinessLibrary</RootNamespace>
-    <AssemblyName>BusinessLibrary</AssemblyName>
+    <RootNamespace>DataAccessCore</RootNamespace>
+    <AssemblyName>DataAccessCore</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -46,23 +46,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="UserBLL.cs" />
-    <Compile Include="DAL\UserDAL.cs" />
+    <Compile Include="Base\BaseHelper.cs" />
+    <Compile Include="Base\BaseStaticHelper.cs" />
+    <Compile Include="Base\IConnString.cs" />
+    <Compile Include="TestHelper.cs" />
+    <Compile Include="ConnString\TestConnString.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Common\Common.csproj">
-      <Project>{078D215B-2E66-4450-9157-349E023CE51E}</Project>
-      <Name>Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\DataAccessCore\DataAccessCore.csproj">
-      <Project>{590D631E-6503-4CFC-AB50-7FE433C7782F}</Project>
-      <Name>DataAccessCore</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Entity\Entity.csproj">
-      <Project>{080869DE-2307-4988-9444-CBC1B1F6173E}</Project>
-      <Name>Entity</Name>
-    </ProjectReference>
+    <Compile Include="TestStaticHelper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

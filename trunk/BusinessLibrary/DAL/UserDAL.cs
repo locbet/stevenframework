@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using BusinessLibrary.Core;
 using System.Data;
 using Entity;
+using DataAccessCore;
 
 namespace BusinessLibrary.DAL
 {
@@ -13,7 +13,7 @@ namespace BusinessLibrary.DAL
         public UserInfo CheckLogin()
         {
             string sql = "select * from [User] where [UserName]=@username";
-            using (DBHelper db = new DBHelper())
+            using (TestHelper db = new TestHelper())
             {
                 IDbDataParameter p = db.CreateParameter("@username", SqlDbType.NVarChar, 50, "steven");
                 IDataReader reader = db.ExecuteReader(sql, p);
@@ -30,7 +30,7 @@ namespace BusinessLibrary.DAL
         public int GetUserCount()
         {
             string sql = "select count(*) from [User]";
-            return Convert.ToInt32(DBStaticHelper.ExecuteScalar(CommandType.Text, sql));
+            return Convert.ToInt32(TestStaticHelper.ExecuteScalar(CommandType.Text, sql));
         }
     }
 }
