@@ -1,5 +1,8 @@
 ﻿namespace DataAccessCore.ConnString
 {
+    /// <summary>
+    /// 数据库连接类
+    /// </summary>
     public class TestRapTierConnString : Base.AbsConnString
     {
         public TestRapTierConnString()
