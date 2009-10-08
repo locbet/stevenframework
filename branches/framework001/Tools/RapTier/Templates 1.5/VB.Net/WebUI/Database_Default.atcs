@@ -1,0 +1,39 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+<html>
+<head>
+	<title><#= Database.CodeName #></title>
+	<meta name="GENERATOR" content="RapTier">
+</head>
+<frameset framespacing="0" border="0" rows="47,*" frameborder=0>
+	<frame marginHeight=0 marginWidth=0 frameborder="0" name="header" src="Header.htm" noresize scrolling=no>
+	<frame marginHeight=0 marginWidth=0 frameborder="0" name="main" src="About.htm">
+	<noframes>
+		This page uses frames, but your browser doesn't support them.
+	</noframes>
+</frameset>
+</html>
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.Text;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return "Default.htm"; }
+	}
+##>

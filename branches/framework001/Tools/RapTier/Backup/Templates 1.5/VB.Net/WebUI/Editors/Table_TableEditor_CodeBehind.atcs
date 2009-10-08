@@ -1,0 +1,350 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+' <fileinfo name="<#= RelativeFilePath #>">
+'		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "'			"); ##>
+'		</copyright>
+'		<remarks>
+'			Do not change this source code manually. Changes to this file may 
+'			cause incorrect behavior and will be lost if the code is regenerated.
+'		</remarks>
+'		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+' </fileinfo>
+
+Option Strict Off
+Option Explicit On
+
+Imports System
+Imports System.Collections
+Imports System.Data
+Imports System.Web
+Imports System.Web.UI
+Imports System.Web.UI.WebControls
+Imports System.Web.UI.HtmlControls
+
+Namespace Editors
+	''' <summary>
+	''' This control is used to display and edit content of the '<#= Table.Name #>' table.
+	''' </summary>
+	Public Class <#= GetTableEditorClassName(Table) #> 
+			Inherits System.Web.UI.Page
+		Protected WithEvents _grid As System.Web.UI.WebControls.DataGrid
+		Protected _errorLabel As System.Web.UI.WebControls.Label
+
+		#Region " Web Form Designer Generated Code "
+
+		'This call is required by the Web Form Designer.
+		<System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
+
+		End Sub
+
+		Private Sub Page_Init(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Init
+		    'CODEGEN: This method call is required by the Web Form Designer
+		    'Do not modify it using the code editor.
+		    InitializeComponent()
+		End Sub
+
+		#End Region
+
+		Private Sub Page_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
+			If Not IsPostBack Then
+				BindGrid(-1)
+			Else
+				SetErrorMessage(String.Empty)
+			End If
+		End Sub
+
+		' Invoked when one of the grid page selection elements is clicked.
+		Private Sub OnPageIndexChanged(ByVal sender As System.Object, ByVal e As System.Web.UI.WebControls.DataGridPageChangedEventArgs) Handles _grid.PageIndexChanged
+			_grid.CurrentPageIndex = e.NewPageIndex
+			BindGrid(-1)
+		End Sub
+
+		' Invoked when a column sort label is clicked.
+		Private Sub OnSortCommand(ByVal source As System.Object, ByVal e As System.Web.UI.WebControls.DataGridSortCommandEventArgs) Handles _grid.SortCommand
+			ViewState.Add("sort", e.SortExpression)
+			BindGrid(-1)
+		End Sub
+<#		if(Table.Updatable && 0 < Table.Columns.GetPrimaryColumns().Length)
+		{ ##>
+
+		' Invoked when the Edit button is clicked.
+		Private Sub OnEditCommand(ByVal source As System.Object, ByVal e As DataGridCommandEventArgs)  Handles _grid.EditCommand
+			BindGrid(e.Item.ItemIndex)
+		End Sub
+
+		' Invoked when the Cancel button is clicked.
+		Private Sub OnCancelCommand(ByVal source As System.Object, ByVal e As DataGridCommandEventArgs) Handles _grid.CancelCommand
+			BindGrid(-1)
+		End Sub
+
+		' Invoked when the Delete button is clicked.
+		Private Sub OnDeleteCommand(ByVal source As System.Object, ByVal e As DataGridCommandEventArgs) Handles _grid.DeleteCommand
+			Try
+				Dim db As <#= GetFullDbClassName() #> = new <#= GetFullDbClassName() #>()
+				Try
+					Dim keys As Object() = CType(CType(ViewState("keys"), ArrayList)(e.Item.ItemIndex), Object())
+					db.<#= SharedUtils.GetGatewayClassName(Table) #>.DeleteByPrimaryKey(<# WritePKParameters(); #>)
+				Finally
+					db.Dispose()
+				End Try
+				BindGrid(-1)
+			Catch ex As Exception
+				SetErrorMessage(ex.Message)
+			End Try
+		End Sub
+<#	if(0 < Table.Columns.GetWriteableNonPrimaryColumns().Length)
+	{ ##>
+		
+		' Invoked when the Update button is clicked.
+		Private Sub OnUpdateCommand(ByVal source As System.Object, ByVal e As DataGridCommandEventArgs) Handles _grid.UpdateCommand
+			Try
+				Dim db As <#= GetFullDbClassName() #> = new <#= GetFullDbClassName() #>()
+				Try
+					Dim keys As Object() = CType(CType(ViewState("keys"), ArrayList)(e.Item.ItemIndex), Object())
+					Dim row As <#= GetTableRowClassName(Table) #> = db.<#= SharedUtils.GetGatewayClassName(Table) #>.GetByPrimaryKey(<# WritePKParameters(); #>)
+					If Not(row Is Nothing) Then
+						FillRow(e.Item, row)
+						db.<#= SharedUtils.GetGatewayClassName(Table) #>.Update(row)
+					End If
+				Finally
+					db.Dispose()
+				End Try
+				BindGrid(-1)
+			Catch ex As Exception
+				SetErrorMessage(ex.Message)
+			End Try
+		End Sub
+<#	} ##>
+
+		' Invoked when a command button is clicked.
+		Private Sub OnCommand(ByVal source As System.Object, ByVal e As DataGridCommandEventArgs) Handles _grid.ItemCommand
+			Try
+				' Is this the Insert button?
+				If e.CommandName = "Insert" Then
+					Dim db As <#= GetFullDbClassName() #> = new <#= GetFullDbClassName() #>()
+					Try
+						Dim row As <#= GetTableRowClassName(Table) #> = new <#= GetTableRowClassName(Table) #>()
+						FillRow(e.Item, row)
+						db.<#= SharedUtils.GetGatewayClassName(Table) #>.Insert(row)
+					Finally
+						db.Dispose()
+					End Try
+					BindGrid(-1)
+				End If
+			Catch ex As Exception
+				SetErrorMessage(ex.Message)
+			End Try
+		End Sub
+
+		' Fills the specified row object with data from the DataGrid.
+		Private Sub FillRow(ByVal dgRow As DataGridItem, ByVal row As <#= GetTableRowClassName(Table) #>)
+			Dim value As String
+<#			for(int i = 0; i < Table.Columns.Count; i++)
+			{ 
+				IColumn column = Table.Columns[i];
+				Type columnType = SharedUtils.ToDotNetType(column.OleDbType);
+				if(!column.ReadOnly && !columnType.IsArray)
+				{ ##>
+			value = CType(dgRow.FindControl("_<#= column.CodeName #>Txt"), TextBox).Text
+<#					if(typeof(string) == columnType)
+					{ ##>
+			row.<#= GetPropertyName(column, true) #> = value
+<#					}
+					else if(column.Nullable)
+					{ ##>
+			If "" = value Then
+				row.Is<#= GetPropertyName(column, false) #>Null = true
+			Else
+				row.<#= GetPropertyName(column, true) #> = <#= GetConvertToCode(column) #>
+			End If
+<#					}
+					else
+					{ ##>
+			row.<#= GetPropertyName(column, true) #> = <#= GetConvertToCode(column) #>
+<#					} ##>
+<#				}
+			} ##>
+		End Sub
+<#		} ##>
+		
+		' Displays an error message
+		Private Sub SetErrorMessage(ByVal text As String)
+			_errorLabel.Text = "ERROR: " + text
+			_errorLabel.Visible = Not(text Is Nothing) AndAlso 0 < text.Length
+		End Sub
+
+		' Loads data from the database and binds the UI controls.
+		Private Sub BindGrid(ByVal editIndex As Integer)
+			Dim db As <#= GetFullDbClassName() #> = new <#= GetFullDbClassName() #>()
+			Try
+				Dim sort As String = CType(ViewState("sort"), String)
+				Dim table As DataTable = db.<#= SharedUtils.GetGatewayClassName(Table) #>.GetAsDataTable(Nothing, sort)
+
+				Dim viewStateFirst As Integer = _grid.CurrentPageIndex * _grid.PageSize
+				Dim viewStateLast As Integer 
+				If _grid.AllowPaging Then
+					viewStateLast = Math.Min(viewStateFirst + _grid.PageSize, table.Rows.Count)
+				Else
+					viewStateLast = table.Rows.Count
+				End If
+
+<#		if(Table.Updatable && 0 < Table.Columns.GetPrimaryColumns().Length)
+		{ ##>
+				Dim list As ArrayList = new ArrayList()
+				Dim i As Integer
+				For i = viewStateFirst To viewStateLast - 1
+					Dim row As DataRow = table.Rows(i)
+					list.Add(new Object(){<#
+					IColumn[] bpkColumns = Table.Columns.GetPrimaryColumns();
+					for(int i = 0; i < bpkColumns.Length; i++)
+					{
+						if(i != 0)
+							Writer.Write(", ");
+						#>row("<#= bpkColumns[i].CodeName #>")<#
+					}#>})
+				Next
+				Me.ViewState.Add("keys", list)
+
+<#		} ##>
+				Dim dataSet As DataSet = new DataSet()
+				dataSet.Tables.Add(table)
+				_grid.DataSource = dataSet
+				_grid.DataMember = "<#= Table.CodeName #>"
+				_grid.EditItemIndex = editIndex
+
+				_grid.DataBind()
+			Finally
+				db.Dispose()
+			End Try
+		End Sub
+	End Class
+End Namespace
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.Collections;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private ITable Table
+	{
+		get { return (ITable)Environment["Table"]; }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return GetTableEditorClassName(Table) + ".aspx.vb"; }
+	}
+
+	private string GetTableEditorClassName(ITable table)
+	{
+		return table.CodeName;
+	}
+
+	private string GetRowEditorClassName(ITable table)
+	{
+		return table.CodeName + "RowEditor";
+	}
+	
+	private string GetTableRowClassName(ITable table)
+	{
+		return table.CodeName + "Row";
+	}
+
+	private string GetPropertyName(IColumn column, bool checkForKeyword)
+	{
+		return SharedUtils.GetPropertyName(column.CodeName, checkForKeyword);
+	}
+
+	private string GetDotNetTypeName(IColumn column)
+	{
+		return SharedUtils.GetCSharpTypeName(SharedUtils.GetDotNetType(column, false));
+	}
+	
+	private string GetParameterName(IColumn column)
+	{
+		return Char.ToLower(column.CodeName[0]) + column.CodeName.Substring(1);
+	}
+	
+	private string GetWebUITierNamespace()
+	{
+		return SharedUtils.GetWebUITierNamespace(Table.Database);
+	}
+	
+	private string GetChildRelationName(IRelation relation)
+	{
+		return relation.ChildColumns[0].Table.CodeName;
+	}
+	
+	private void WriteColumnParameterList(IColumn[] columns, bool writeType, string rowObjName)
+	{
+		bool firstItem = true;
+		foreach(IColumn column in columns)
+		{
+			if(firstItem)
+				firstItem = false;
+			else
+				Writer.Write(", ");
+
+			if(writeType)
+			{
+				Writer.Write(GetDotNetTypeName(column));
+				Writer.Write(' ');
+				Writer.Write(GetParameterName(column));
+			}
+			else
+			{
+				Writer.Write(rowObjName);
+				Writer.Write('.');
+				Writer.Write(GetPropertyName(column, true));
+			}
+		}	
+	}
+	
+	private void WritePKParameters()
+	{
+		IColumn[] pkColumns = Table.Columns.GetPrimaryColumns();
+		for(int i = 0; i < pkColumns.Length; i++)
+		{
+			if(i != 0)
+				Writer.Write(", ");
+			Writer.Write("CType(");
+			Writer.Write("keys(");
+			Writer.Write(i);
+			Writer.Write("), ");
+			Writer.Write(SharedUtils.GetCSharpTypeName(SharedUtils.ToDotNetType(pkColumns[i].OleDbType)));
+			Writer.Write(")");
+		}
+	}
+	
+	private string GetFullDbClassName()
+	{
+		return SharedUtils.GetDbTierUserNamespace(Table.Database) 
+					+ "." + Table.Database.CodeName;
+	}
+	
+	private string GetConvertToCode(IColumn column)
+	{
+		Type columnType = SharedUtils.GetDotNetType(column, false);
+		if(columnType == typeof(TimeSpan))
+			return "new TimeSpan(Convert.ToInt64(value))";
+		else if(columnType == typeof(Guid))
+			return "new Guid(value)";
+		else if(columnType != typeof(object))
+			return "Convert.To" + columnType.Name + "(value)";
+		return "value";
+	}
+##>

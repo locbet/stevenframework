@@ -1,0 +1,1391 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+// <fileinfo name="<#= RelativeFilePath #>">
+//		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "//			"); ##>
+//		</copyright>
+//		<remarks>
+//			Do not change this source code manually. Changes to this file may 
+//			cause incorrect behavior and will be lost if the code is regenerated.
+//		</remarks>
+//		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+// </fileinfo>
+
+using System;
+using System.Data;
+<#	if(GetNamespace() != SharedUtils.GetDbTierUserNamespace(Table.Database))
+	{ ##>
+using <#= SharedUtils.GetDbTierUserNamespace(Table.Database) #>;
+<#	} ##>
+
+namespace <#= GetNamespace() #>
+{
+	/// <summary>
+	/// The base class for <see cref="<#= GetUserClassName() #>"/>. Provides methods 
+	/// for common database <#= GetTableView() #> operations. 
+	/// </summary>
+	/// <remarks>
+	/// Do not change this source code. Update the <see cref="<#= GetUserClassName() #>"/>
+	/// class if you need to add or change some functionality.
+	/// </remarks>
+	public abstract class <#= GetClassName() #>
+	{
+		// Constants
+<#		foreach(IColumn column in Table.Columns)	
+		{ ##>
+		public const string <#= column.CodeName #>ColumnName = "<#= column.Name #>";
+<#		} ##>
+
+		// Instance fields
+		private <#= GetDbClassName() #> _db;
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="<#= GetClassName() #>"/> 
+		/// class with the specified <see cref="<#= GetDbClassName() #>"/>.
+		/// </summary>
+		/// <param name="db">The <see cref="<#= GetDbClassName() #>"/> object.</param>
+		public <#= GetClassName() #>(<#= GetDbClassName() #> db)
+		{
+			_db = db;
+		}
+
+		/// <summary>
+		/// Gets the database object that this <#= GetTableView() #> belongs to.
+		///	</summary>
+		///	<value>The <see cref="<#= GetDbClassName() #>"/> object.</value>
+		protected <#= GetDbClassName() #> Database
+		{
+			get { return _db; }
+		}
+
+		/// <summary>
+		/// Gets an array of all records from the <c><#= Table.Name #></c> <#= GetTableView() #>.
+		/// </summary>
+		/// <returns>An array of <see cref="<#= GetRowClassName(Table) #>"/> objects.</returns>
+		public virtual <#= GetRowClassName(Table) #>[] GetAll()
+		{
+			return MapRecords(CreateGetAllCommand());
+		}
+
+		/// <summary>
+		/// Gets a <see cref="System.Data.DataTable"/> object that 
+		/// includes all records from the <c><#= Table.Name #></c> <#= GetTableView() #>.
+		/// </summary>
+		/// <returns>A reference to the <see cref="System.Data.DataTable"/> object.</returns>
+		public virtual DataTable GetAllAsDataTable()
+		{
+			return MapRecordsToDataTable(CreateGetAllCommand());
+		}
+
+		/// <summary>
+		/// Creates and returns an <see cref="System.Data.IDbCommand"/> object that is used
+		/// to retrieve all records from the <c><#= Table.Name #></c> <#= GetTableView() #>.
+		/// </summary>
+		/// <returns>A reference to the <see cref="System.Data.IDbCommand"/> object.</returns>
+		protected virtual IDbCommand CreateGetAllCommand()
+		{
+<#			if(GenerateStoredProcedures)		
+			{ ##>
+			return _db.CreateCommand("<#= GetGetAllProcName(Table) #>", true);
+<#			}
+			else
+			{ ##>
+			return CreateGetCommand(null, null);
+<#			} ##>
+		}
+
+		/// <summary>
+		/// Gets the first <see cref="<#= GetRowClassName(Table) #>"/> objects that 
+		/// match the search condition.
+		/// </summary>
+		/// <param name="whereSql">The SQL search condition. For example: 
+		/// <c>"FirstName='Smith' AND Zip=75038"</c>.</param>
+		/// <returns>An instance of <see cref="<#= GetRowClassName(Table) #>"/> or null reference 
+		/// (Nothing in Visual Basic) if the object was not found.</returns>
+		public <#= GetRowClassName(Table) #> GetRow(string whereSql)
+		{
+			int totalRecordCount = -1;
+			<#= GetRowClassName(Table) #>[] rows = GetAsArray(whereSql, null, 0, 1, ref totalRecordCount);
+			return 0 == rows.Length ? null : rows[0];
+		}
+
+		/// <summary>
+		/// Gets an array of <see cref="<#= GetRowClassName(Table) #>"/> objects that 
+		/// match the search condition, in the the specified sort order.
+		/// </summary>
+		/// <param name="whereSql">The SQL search condition. For example: 
+		/// <c>"FirstName='Smith' AND Zip=75038"</c>.</param>
+		/// <param name="orderBySql">The column name(s) followed by "ASC" (ascending) or "DESC" (descending).
+		/// Columns are sorted in ascending order by default. For example: <c>"LastName ASC, FirstName ASC"</c>.</param>
+		/// <returns>An array of <see cref="<#= GetRowClassName(Table) #>"/> objects.</returns>
+		public <#= GetRowClassName(Table) #>[] GetAsArray(string whereSql, string orderBySql)
+		{
+			int totalRecordCount = -1;
+			return GetAsArray(whereSql, orderBySql, 0, int.MaxValue, ref totalRecordCount);
+		}
+
+		/// <summary>
+		/// Gets an array of <see cref="<#= GetRowClassName(Table) #>"/> objects that 
+		/// match the search condition, in the the specified sort order.
+		/// </summary>
+		/// <param name="whereSql">The SQL search condition. For example:
+		/// <c>"FirstName='Smith' AND Zip=75038"</c>.</param>
+		/// <param name="orderBySql">The column name(s) followed by "ASC" (ascending) or "DESC" (descending).
+		/// Columns are sorted in ascending order by default. For example: <c>"LastName ASC, FirstName ASC"</c>.</param>
+		/// <param name="startIndex">The index of the first record to return.</param>
+		/// <param name="length">The number of records to return.</param>
+		/// <param name="totalRecordCount">A reference parameter that returns the total number 
+		/// of records in the reader object if 0 was passed into the method; otherwise it returns -1.</param>
+		/// <returns>An array of <see cref="<#= GetRowClassName(Table) #>"/> objects.</returns>
+		public virtual <#= GetRowClassName(Table) #>[] GetAsArray(string whereSql, string orderBySql,
+							int startIndex, int length, ref int totalRecordCount)
+		{
+			using(IDataReader reader = _db.ExecuteReader(CreateGetCommand(whereSql, orderBySql)))
+			{
+				return MapRecords(reader, startIndex, length, ref totalRecordCount);
+			}
+		}
+
+		/// <summary>
+		/// Gets a <see cref="System.Data.DataTable"/> object filled with data that 
+		/// match the search condition, in the the specified sort order.
+		/// </summary>
+		/// <param name="whereSql">The SQL search condition. For example: "FirstName='Smith' AND Zip=75038".</param>
+		/// <param name="orderBySql">The column name(s) followed by "ASC" (ascending) or "DESC" (descending).
+		/// Columns are sorted in ascending order by default. For example: "LastName ASC, FirstName ASC".</param>
+		/// <returns>A reference to the <see cref="System.Data.DataTable"/> object.</returns>
+		public DataTable GetAsDataTable(string whereSql, string orderBySql)
+		{
+			int totalRecordCount = -1;
+			return GetAsDataTable(whereSql, orderBySql, 0, int.MaxValue, ref totalRecordCount);
+		}
+
+		/// <summary>
+		/// Gets a <see cref="System.Data.DataTable"/> object filled with data that 
+		/// match the search condition, in the the specified sort order.
+		/// </summary>
+		/// <param name="whereSql">The SQL search condition. For example: "FirstName='Smith' AND Zip=75038".</param>
+		/// <param name="orderBySql">The column name(s) followed by "ASC" (ascending) or "DESC" (descending).
+		/// Columns are sorted in ascending order by default. For example: "LastName ASC, FirstName ASC".</param>
+		/// <param name="startIndex">The index of the first record to return.</param>
+		/// <param name="length">The number of records to return.</param>
+		/// <param name="totalRecordCount">A reference parameter that returns the total number 
+		/// of records in the reader object if 0 was passed into the method; otherwise it returns -1.</param>
+		/// <returns>A reference to the <see cref="System.Data.DataTable"/> object.</returns>
+		public virtual DataTable GetAsDataTable(string whereSql, string orderBySql,
+							int startIndex, int length, ref int totalRecordCount)
+		{
+			using(IDataReader reader = _db.ExecuteReader(CreateGetCommand(whereSql, orderBySql)))
+			{
+				return MapRecordsToDataTable(reader, startIndex, length, ref totalRecordCount);
+			}
+		}
+
+		/// <summary>
+		/// Creates an <see cref="System.Data.IDbCommand"/> object for the specified search criteria.
+		/// </summary>
+		/// <param name="whereSql">The SQL search condition. For example: "FirstName='Smith' AND Zip=75038".</param>
+		/// <param name="orderBySql">The column name(s) followed by "ASC" (ascending) or "DESC" (descending).
+		/// Columns are sorted in ascending order by default. For example: "LastName ASC, FirstName ASC".</param>
+		/// <returns>A reference to the <see cref="System.Data.IDbCommand"/> object.</returns>
+		protected virtual IDbCommand CreateGetCommand(string whereSql, string orderBySql)
+		{
+			string sql = "SELECT * FROM <#= GetFullTableName(Table) #>";
+			if(null != whereSql && 0 < whereSql.Length)
+				sql += " WHERE " + whereSql;
+			if(null != orderBySql && 0 < orderBySql.Length)
+				sql += " ORDER BY " + orderBySql;
+			return _db.CreateCommand(sql);
+		}
+<#		
+		if(0 == Table.Columns.GetPrimaryColumns().Length)
+		{
+			if(Table.Updatable)
+				Environment.AddWarning("'" + Table.Name + "' does not have a primary key.");
+		}
+		else
+		{ 
+			// Generate only if table/view has primary key
+			##>
+
+		/// <summary>
+		/// Gets <see cref="<#= GetRowClassName(Table) #>"/> by the primary key.
+		/// </summary>
+<#		foreach(IColumn column in Table.Columns.GetPrimaryColumns())
+		{ ##>
+		/// <param name="<#= GetParameterName(column, false) #>">The <c><#= column.Name #></c> column value.</param>
+<#		} ##>
+		/// <returns>An instance of <see cref="<#= GetRowClassName(Table) #>"/> or null reference 
+		/// (Nothing in Visual Basic) if the object was not found.</returns>
+		public virtual <#= GetRowClassName(Table) #> GetByPrimaryKey(<# WriteDeclareMethodParameterList(Table.Columns.GetPrimaryColumns(), false); #>)
+		{
+<#			if(GenerateStoredProcedures)
+			{ ##>
+			IDbCommand cmd = _db.CreateCommand("<#= GetGetByKeyProcName(Table) #>", true);
+<#			}
+			else
+			{ ##>
+			string whereSql = "<#
+			bool getByKeyFirstItem = true;
+			foreach(IColumn column in Table.Columns.GetPrimaryColumns())
+			{
+				if(getByKeyFirstItem)
+					getByKeyFirstItem = false;
+				else
+				{ ##> + " AND " +
+							  "<#
+				} ##>
+<#= GetSqlName(column.Name) #>=" + _db.CreateSqlParameterName("<#= GetSqlParameterName(column) #>")<#
+			} #>;
+			IDbCommand cmd = CreateGetCommand(whereSql, null);
+<#			} ##>			
+<#			foreach(IColumn column in Table.Columns.GetPrimaryColumns())
+			{ ##>
+			AddParameter(cmd, "<#= GetSqlParameterName(column) #>", <#= GetParameterName(column, true) #>);
+<#			} ##>
+			<#= GetRowClassName(Table) #>[] tempArray = MapRecords(cmd);
+			return 0 == tempArray.Length ? null : tempArray[0];
+		}
+<#		} ##>
+<#		ArrayList methodMap = new ArrayList();
+		
+		foreach(IRelation relation in Table.ParentRelations)
+		{ 
+			string methodName = "GetBy" + SharedUtils.GetColumnListName(relation.ChildColumns);
+			if(methodMap.Contains(methodName))
+				continue;
+			methodMap.Add(methodName);
+		##>
+
+		/// <summary>
+		/// Gets an array of <see cref="<#= GetRowClassName(Table) #>"/> objects 
+		/// by the <c><#= relation.Name #></c> foreign key.
+		/// </summary>
+<#		foreach(IColumn column in relation.ChildColumns)
+		{ ##>
+		/// <param name="<#= GetParameterName(column, false) #>">The <c><#= column.Name #></c> column value.</param>
+<#		} ##>
+		/// <returns>An array of <see cref="<#= GetRowClassName(Table) #>"/> objects.</returns>
+<#		if(!HasNullableValueTypeColumn(relation.ChildColumns))
+		{ ##>
+		public virtual <#= GetRowClassName(Table) #>[] <#= methodName #>(<# WriteDeclareMethodParameterList(relation.ChildColumns, false); #>)
+		{
+			return MapRecords(Create<#= methodName #>Command(<# WriteCallMethodParameterList(relation.ChildColumns, null, false, ValueNullableParameter.GenerateFalse); #>));
+		}
+<#		}
+		else
+		{ ##>
+		public <#= GetRowClassName(Table) #>[] <#= methodName #>(<# WriteDeclareMethodParameterList(relation.ChildColumns, false); #>)
+		{
+			return <#= methodName #>(<# WriteCallMethodParameterList(relation.ChildColumns, null, false, ValueNullableParameter.GenerateFalse); #>);
+		}
+
+		/// <summary>
+		/// Gets an array of <see cref="<#= GetRowClassName(Table) #>"/> objects 
+		/// by the <c><#= relation.Name #></c> foreign key.
+		/// </summary>
+<#		foreach(IColumn column in relation.ChildColumns)
+		{ ##>
+		/// <param name="<#= GetParameterName(column, false) #>">The <c><#= column.Name #></c> column value.</param>
+<#			if(column.Nullable && IsValueType(column))
+			{ ##>
+		/// <param name="<#= GetParameterName(column, false) #>Null">true if the method ignores the <#= GetParameterName(column, false) #>
+		/// parameter value and uses DbNull instead of it; otherwise, false.</param>
+<#			} ##>
+<#		} ##>
+		/// <returns>An array of <see cref="<#= GetRowClassName(Table) #>"/> objects.</returns>
+		public virtual <#= GetRowClassName(Table) #>[] <#= methodName #>(<# WriteDeclareMethodParameterList(relation.ChildColumns, true); #>)
+		{
+			return MapRecords(Create<#= methodName #>Command(<# WriteCallMethodParameterList(relation.ChildColumns, null, false, ValueNullableParameter.GenerateParamNull); #>));
+		}
+<#		} ##>
+
+		/// <summary>
+		/// Gets a <see cref="System.Data.DataTable"/> object 
+		/// by the <c><#= relation.Name #></c> foreign key.
+		/// </summary>
+<#		foreach(IColumn column in relation.ChildColumns)
+		{ ##>
+		/// <param name="<#= GetParameterName(column, false) #>">The <c><#= column.Name #></c> column value.</param>
+<#		} ##>
+		/// <returns>A reference to the <see cref="System.Data.DataTable"/> object.</returns>
+<#		if(!HasNullableValueTypeColumn(relation.ChildColumns))
+		{ ##>
+		public virtual DataTable <#= methodName #>AsDataTable(<# WriteDeclareMethodParameterList(relation.ChildColumns, false); #>)
+		{
+			return MapRecordsToDataTable(Create<#= methodName #>Command(<# WriteCallMethodParameterList(relation.ChildColumns, null, false, ValueNullableParameter.GenerateFalse); #>));
+		}
+<#		}
+		else
+		{ ##>
+		public DataTable <#= methodName #>AsDataTable(<# WriteDeclareMethodParameterList(relation.ChildColumns, false); #>)
+		{
+			return <#= methodName #>AsDataTable(<# WriteCallMethodParameterList(relation.ChildColumns, null, false, ValueNullableParameter.GenerateFalse); #>);
+		}
+
+		/// <summary>
+		/// Gets a <see cref="System.Data.DataTable"/> object 
+		/// by the <c><#= relation.Name #></c> foreign key.
+		/// </summary>
+<#		foreach(IColumn column in relation.ChildColumns)
+		{ ##>
+		/// <param name="<#= GetParameterName(column, false) #>">The <c><#= column.Name #></c> column value.</param>
+<#			if(column.Nullable && IsValueType(column))
+			{ ##>
+		/// <param name="<#= GetParameterName(column, false) #>Null">true if the method ignores the <#= GetParameterName(column, false) #>
+		/// parameter value and uses DbNull instead of it; otherwise, false.</param>
+<#			} ##>
+<#		} ##>
+		/// <returns>A reference to the <see cref="System.Data.DataTable"/> object.</returns>
+		public virtual DataTable <#= methodName #>AsDataTable(<# WriteDeclareMethodParameterList(relation.ChildColumns, true); #>)
+		{
+			return MapRecordsToDataTable(Create<#= methodName #>Command(<# WriteCallMethodParameterList(relation.ChildColumns, null, false, ValueNullableParameter.GenerateParamNull); #>));
+		}
+<#		} ##>
+
+		/// <summary>
+		/// Creates an <see cref="System.Data.IDbCommand"/> object that can be used to 
+		/// return records by the <c><#= relation.Name #></c> foreign key.
+		/// </summary>
+<#		foreach(IColumn column in relation.ChildColumns)
+		{ ##>
+		/// <param name="<#= GetParameterName(column, false) #>">The <c><#= column.Name #></c> column value.</param>
+<#			if(column.Nullable && IsValueType(column))
+			{ ##>
+		/// <param name="<#= GetParameterName(column, false) #>Null">true if the method ignores the <#= GetParameterName(column, false) #>
+		/// parameter value and uses DbNull instead of it; otherwise, false.</param>
+<#			} ##>
+<#		} ##>
+		/// <returns>A reference to the <see cref="System.Data.IDbCommand"/> object.</returns>
+		protected virtual IDbCommand Create<#= methodName #>Command(<# WriteDeclareMethodParameterList(relation.ChildColumns, true); #>)
+		{
+<#			if(GenerateStoredProcedures)
+			{ ##>
+			IDbCommand cmd = _db.CreateCommand("<#= GetGetByForeignKeyProcName(relation) #>", true);
+<#			}
+			else
+			{ ##>
+			string whereSql = "";
+<#
+			string prefix = "";
+			foreach(IColumn column in relation.ChildColumns)
+			{
+				if(column.Nullable)
+				{ ##>
+<#					if(IsValueType(column))
+					{ ##>
+			if(<#= GetParameterName(column, false) #>Null)
+<#					}
+					else
+					{ ##>
+			if(null == <#= GetParameterName(column, true) #>)
+<#					} ##>
+				whereSql += "<#= prefix + GetSqlName(column.Name) #> IS NULL";
+			else
+	<# /* Indent */ ##>
+<#				} ##>
+			whereSql += "<#= prefix + GetSqlName(column.Name) #>=" + _db.CreateSqlParameterName("<#= GetSqlParameterName(column) #>");
+<#			prefix = " AND ";
+			} ##>
+
+			IDbCommand cmd = CreateGetCommand(whereSql, null);
+<#			} ##>
+<#			foreach(IColumn column in relation.ChildColumns)
+			{ ##>
+<#				if(column.Nullable && !GenerateStoredProcedures)
+				{ ##>
+<#					if(IsValueType(column))
+					{ ##>
+			if(!<#= GetParameterName(column, false) #>Null)
+<#					}
+					else
+					{ ##>
+			if(null != <#= GetParameterName(column, true) #>)
+<#					} ##>
+	<# /* Indent */ ##>
+<#				} 
+				string valueCode;
+				if(column.Nullable && GenerateStoredProcedures && IsValueType(column))
+				{
+					valueCode = GetParameterName(column, false) + 
+						"Null ? null : (object)" + GetParameterName(column, true);
+				}
+				else
+					valueCode = GetParameterName(column, true); ##>
+			AddParameter(cmd, "<#= GetSqlParameterName(column) #>", <#= valueCode #>);
+<#			} ##>
+			return cmd;
+		}
+<#		} // End foreach ##>		
+<#		if(Table.Updatable)
+		{ ##>
+<#			if(0 < Table.Columns.GetWriteableColumns().Length)
+			{ ##>
+
+		/// <summary>
+		/// Adds a new record into the <c><#= Table.Name #></c> <#= GetTableView() #>.
+		/// </summary>
+		/// <param name="value">The <see cref="<#= GetRowClassName(Table) #>"/> object to be inserted.</param>
+		public virtual void Insert(<#= GetRowClassName(Table) #> value)
+		{
+<#			IColumn identityColumn = null;
+			if(SharedUtils.GetGenerateIdentity(Table.Database))
+				identityColumn = SharedUtils.GetIdentityColumn(Table);
+
+			if(GenerateStoredProcedures)
+			{ ##>
+			IDbCommand cmd = _db.CreateCommand("<#= GetInsertProcName(Table) #>", true);
+<#			}
+			else
+			{ ##>
+			string sqlStr = "INSERT INTO <#= GetFullTableName(Table) #> (" +
+<#			
+			bool insertFirstItem = true;
+			foreach(IColumn column in Table.Columns.GetWriteableColumns())
+			{
+				if(insertFirstItem)
+					insertFirstItem = false;
+				else
+				{ ##>, " +
+<#				} ##>
+				"<#= GetSqlName(column.Name) #><#
+			} ##>" +
+				") VALUES (" +
+<#
+			insertFirstItem = true;
+			foreach(IColumn column in Table.Columns.GetWriteableColumns())
+			{ 
+				if(insertFirstItem)
+					insertFirstItem = false;
+				else
+				{ ##> + ", " +
+<#				} ##>
+				_db.CreateSqlParameterName("<#= GetSqlParameterName(column) #>")<#
+			} ##> + ")<#
+			if(null != identityColumn && !SharedUtils.IsAccess(Table.Database) && !SharedUtils.IsSybaseSqlAnywhere(Table.Database))
+				Writer.Write(";SELECT @@IDENTITY");
+			#>";
+			IDbCommand cmd = _db.CreateCommand(sqlStr);
+<#			} // End of if(GenerateStoredProcedures) ##>
+<#			foreach(IColumn column in Table.Columns.GetWriteableColumns())
+			{ 
+				if(ShouldGenerateNullableProperty(column))
+				{ ##>
+			AddParameter(cmd, "<#= GetSqlParameterName(column) #>",
+				value.Is<#= GetPropertyName(column) #>Null ? DBNull.Value : (object)value.<#= GetPropertyName(column) #>);
+<#				}
+				else
+				{ ##>
+			AddParameter(cmd, "<#= GetSqlParameterName(column) #>", value.<#= GetPropertyName(column) #>);
+<#				}
+			} ##>
+<#			if(null != identityColumn)
+			{ ##>
+<#				if(SharedUtils.IsAccess(Table.Database) || SharedUtils.IsSybaseSqlAnywhere(Table.Database))
+				{ ##>
+			cmd.ExecuteNonQuery();
+
+			cmd.Parameters.Clear();
+			cmd.CommandText = "SELECT @@IDENTITY";
+<#				} ##>
+			value.<#= GetPropertyName(identityColumn) #> = Convert.To<#= GetDotNetType(identityColumn).Name #>(cmd.ExecuteScalar());
+<#			}
+			else
+			{ ##>
+			cmd.ExecuteNonQuery();
+<#			} ##>
+		}
+<#			} // End of GetWritebleColumns().Length ##>
+<#		// Generate only if table/view has primary key
+		if(0 < Table.Columns.GetPrimaryColumns().Length)
+		{ 
+			if(0 < Table.Columns.GetWriteableNonPrimaryColumns().Length)
+			{ ##>
+
+		/// <summary>
+		/// Updates a record in the <c><#= Table.Name #></c> table.
+		/// </summary>
+		/// <param name="value">The <see cref="<#= GetRowClassName(Table) #>"/>
+		/// object used to update the table record.</param>
+		/// <returns>true if the record was updated; otherwise, false.</returns>
+		public virtual bool Update(<#= GetRowClassName(Table) #> value)
+		{
+<#			if(GenerateStoredProcedures)
+			{ ##>
+			IDbCommand cmd = _db.CreateCommand("<#= GetUpdateProcName(Table) #>", true);
+<#			}
+			else
+			{ ##>
+			string sqlStr = "UPDATE <#= GetFullTableName(Table) #> SET " +
+<#			bool updateFirstItem = true;
+			foreach(IColumn column in Table.Columns.GetWriteableNonPrimaryColumns())
+			{
+				if(updateFirstItem)
+					updateFirstItem = false;
+				else
+				{ ##> + ", " +
+<#				} ##>
+				"<#= GetSqlName(column.Name) #>=" + _db.CreateSqlParameterName("<#= 
+						GetSqlParameterName(column) #>")<#
+			} ##> +
+				" WHERE " +
+<#
+			updateFirstItem = true;
+			foreach(IColumn column in Table.Columns.GetPrimaryColumns())
+			{
+				if(updateFirstItem)
+					updateFirstItem = false;
+				else
+				{ ##> + " AND " +
+<#				} ##>
+				"<#= GetSqlName(column.Name) #>=" + _db.CreateSqlParameterName("<#= 
+						GetSqlParameterName(column) #>")<#
+			} ##>;
+			IDbCommand cmd = _db.CreateCommand(sqlStr);
+<#			} // End of if(GenerateStoredProcedures) ##>			
+<#			foreach(IColumn column in Table.Columns.GetWriteableNonPrimaryColumns())
+			{ 
+				if(ShouldGenerateNullableProperty(column))
+				{ ##>
+			AddParameter(cmd, "<#= GetSqlParameterName(column) #>",
+				value.Is<#= GetPropertyName(column) #>Null ? DBNull.Value : (object)value.<#= GetPropertyName(column) #>);
+<#				}
+				else
+				{ ##>
+			AddParameter(cmd, "<#= GetSqlParameterName(column) #>", value.<#= GetPropertyName(column) #>);
+<#				}
+			} ##>
+<#			foreach(IColumn column in Table.Columns.GetPrimaryColumns())
+			{ ##>
+			AddParameter(cmd, "<#= GetSqlParameterName(column) #>", value.<#= GetPropertyName(column) #>);
+<#			} ##>
+			return 0 != cmd.ExecuteNonQuery();
+		}
+
+		/// <summary>
+		/// Updates the <c><#= Table.Name #></c> table and calls the <c>AcceptChanges</c> method
+		/// on the changed DataRow objects.
+		/// </summary>
+		/// <param name="table">The <see cref="System.Data.DataTable"/> used to update the data source.</param>
+		public void Update(DataTable table)
+		{
+			Update(table, true);
+		}
+
+		/// <summary>
+		/// Updates the <c><#= Table.Name #></c> table. Pass <c>false</c> as the <c>acceptChanges</c> 
+		/// argument when your code calls this method in an ADO.NET transaction context. Note that in 
+		/// this case, after you call the Update method you need call either <c>AcceptChanges</c> 
+		/// or <c>RejectChanges</c> method on the DataTable object.
+		/// <code>
+		/// MyDb db = new MyDb();
+		/// try
+		/// {
+		///		db.BeginTransaction();
+		///		db.MyCollection.Update(myDataTable, false);
+		///		db.CommitTransaction();
+		///		myDataTable.AcceptChanges();
+		/// }
+		/// catch(Exception)
+		/// {
+		///		db.RollbackTransaction();
+		///		myDataTable.RejectChanges();
+		/// }
+		/// </code>
+		/// </summary>
+		/// <param name="table">The <see cref="System.Data.DataTable"/> used to update the data source.</param>
+		/// <param name="acceptChanges">Specifies whether this method calls the <c>AcceptChanges</c>
+		/// method on the changed DataRow objects.</param>
+		public virtual void Update(DataTable table, bool acceptChanges)
+		{
+			DataRowCollection rows = table.Rows;
+			for(int i = rows.Count - 1; i >= 0; i--)
+			{
+				DataRow row = rows[i];
+				switch(row.RowState)
+				{
+					case DataRowState.Added:
+						Insert(MapRow(row));
+						if(acceptChanges)
+							row.AcceptChanges();
+						break;
+
+					case DataRowState.Deleted:
+						// Temporary reject changes to be able to access to the PK column(s)
+						row.RejectChanges();
+						try
+						{
+							DeleteByPrimaryKey(<#
+								bool firstMapItem = true;
+								foreach(IColumn column in Table.Columns.GetPrimaryColumns())
+								{ 
+									if(firstMapItem)
+										firstMapItem = false;
+									else
+										Writer.Write(", ");
+									Writer.Write("(");
+									Writer.Write(GetDotNetTypeName(column));
+									Writer.Write(")row[\"");
+									Writer.Write(column.CodeName);
+									Writer.Write("\"]");
+								} ##>);
+						}
+						finally
+						{
+							row.Delete();
+						}
+						if(acceptChanges)
+							row.AcceptChanges();
+						break;
+						
+					case DataRowState.Modified:
+						Update(MapRow(row));
+						if(acceptChanges)
+							row.AcceptChanges();
+						break;
+				}
+			}
+		}
+<#			} // End of if(0 < Table.Columns.GetWriteableNonPrimaryColumns().Length) ##>
+
+		/// <summary>
+		/// Deletes the specified object from the <c><#= Table.Name #></c> <#= GetTableView() #>.
+		/// </summary>
+		/// <param name="value">The <see cref="<#= GetRowClassName(Table) #>"/> object to delete.</param>
+		/// <returns>true if the record was deleted; otherwise, false.</returns>
+		public bool Delete(<#= GetRowClassName(Table) #> value)
+		{
+			return DeleteByPrimaryKey(<# WriteCallMethodParameterList(Table.Columns.GetPrimaryColumns(), "value", true, ValueNullableParameter.GenerateFalse); #>);
+		}
+
+		/// <summary>
+		/// Deletes a record from the <c><#= Table.Name #></c> <#= GetTableView() #> using
+		/// the specified primary key.
+		/// </summary>
+<#		foreach(IColumn column in Table.Columns.GetPrimaryColumns())
+		{ ##>
+		/// <param name="<#= GetParameterName(column, false) #>">The <c><#= column.Name #></c> column value.</param>
+<#		} ##>
+		/// <returns>true if the record was deleted; otherwise, false.</returns>
+		public virtual bool DeleteByPrimaryKey(<# WriteDeclareMethodParameterList(Table.Columns.GetPrimaryColumns(), false); #>)
+		{
+<#			if(GenerateStoredProcedures)
+			{ ##>
+			IDbCommand cmd = _db.CreateCommand("<#= GetDeleteByKeyProcName(Table) #>", true);
+<#			}
+			else
+			{ ##>
+			string whereSql = "<#
+			bool delByKeyFirstItem = true;
+			foreach(IColumn column in Table.Columns.GetPrimaryColumns())
+			{
+				if(delByKeyFirstItem)
+					delByKeyFirstItem = false;
+				else
+				{ ##> + " AND " +
+							  "<#
+				} ##>
+<#= GetSqlName(column.Name) #>=" + _db.CreateSqlParameterName("<#= GetSqlParameterName(column) #>")<#
+			} #>;
+			IDbCommand cmd = CreateDeleteCommand(whereSql);
+<#			} // End of if(GenerateStoredProcedures) ##>			
+<#			foreach(IColumn column in Table.Columns.GetPrimaryColumns())
+			{ ##>
+			AddParameter(cmd, "<#= GetSqlParameterName(column) #>", <#= GetParameterName(column, true) #>);
+<#			} ##>
+			return 0 < cmd.ExecuteNonQuery();
+		}
+<#		} // End of if(0 < Table.Columns.GetPrimaryColumns().Length) ##>
+<#		foreach(IRelation relation in Table.ParentRelations)
+		{
+			string methodName = "DeleteBy" + SharedUtils.GetColumnListName(relation.ChildColumns);
+			if(methodMap.Contains(methodName))
+				continue;
+			methodMap.Add(methodName);
+		##>
+
+		/// <summary>
+		/// Deletes records from the <c><#= Table.Name #></c> <#= GetTableView() #> using the 
+		/// <c><#= relation.Name #></c> foreign key.
+		/// </summary>
+<#		foreach(IColumn column in relation.ChildColumns)
+		{ ##>
+		/// <param name="<#= GetParameterName(column, false) #>">The <c><#= column.Name #></c> column value.</param>
+<#		} ##>
+		/// <returns>The number of records deleted from the table.</returns>
+<#		if(!HasNullableValueTypeColumn(relation.ChildColumns))
+		{ ##>
+		public int <#= methodName #>(<# WriteDeclareMethodParameterList(relation.ChildColumns, false); #>)
+		{
+			return Create<#= methodName #>Command(<# WriteCallMethodParameterList(relation.ChildColumns, null, false, ValueNullableParameter.GenerateFalse); #>).ExecuteNonQuery();
+		}
+<#		}
+		else
+		{ ##>
+		public int <#= methodName #>(<# WriteDeclareMethodParameterList(relation.ChildColumns, false); #>)
+		{
+			return <#= methodName #>(<# WriteCallMethodParameterList(relation.ChildColumns, null, false, ValueNullableParameter.GenerateFalse); #>);
+		}
+
+		/// <summary>
+		/// Deletes records from the <c><#= Table.Name #></c> <#= GetTableView() #> using the 
+		/// <c><#= relation.Name #></c> foreign key.
+		/// </summary>
+<#		foreach(IColumn column in relation.ChildColumns)
+		{ ##>
+		/// <param name="<#= GetParameterName(column, false) #>">The <c><#= column.Name #></c> column value.</param>
+<#			if(column.Nullable && IsValueType(column))
+			{ ##>
+		/// <param name="<#= GetParameterName(column, false) #>Null">true if the method ignores the <#= GetParameterName(column, false) #>
+		/// parameter value and uses DbNull instead of it; otherwise, false.</param>
+<#			} ##>
+<#		} ##>
+		/// <returns>The number of records deleted from the table.</returns>
+		public int <#= methodName #>(<# WriteDeclareMethodParameterList(relation.ChildColumns, true); #>)
+		{
+			return Create<#= methodName #>Command(<# WriteCallMethodParameterList(relation.ChildColumns, null, false, ValueNullableParameter.GenerateParamNull); #>).ExecuteNonQuery();
+		}
+<#		} // End else of if(!HasNullableValueTypeColumn(relation.ChildColumns)) ##>
+
+		/// <summary>
+		/// Creates an <see cref="System.Data.IDbCommand"/> object that can be used to
+		/// delete records using the <c><#= relation.Name #></c> foreign key.
+		/// </summary>
+<#		foreach(IColumn column in relation.ChildColumns)
+		{ ##>
+		/// <param name="<#= GetParameterName(column, false) #>">The <c><#= column.Name #></c> column value.</param>
+<#			if(column.Nullable && IsValueType(column))
+			{ ##>
+		/// <param name="<#= GetParameterName(column, false) #>Null">true if the method ignores the <#= GetParameterName(column, false) #>
+		/// parameter value and uses DbNull instead of it; otherwise, false.</param>
+<#			} ##>
+<#		} ##>
+		/// <returns>A reference to the <see cref="System.Data.IDbCommand"/> object.</returns>
+		protected virtual IDbCommand Create<#= methodName #>Command(<# WriteDeclareMethodParameterList(relation.ChildColumns, true); #>)
+		{
+<#			if(GenerateStoredProcedures)
+			{ ##>
+			IDbCommand cmd = _db.CreateCommand("<#= GetDeleteByForeignKeyProcName(relation) #>", true);
+<#			}
+			else
+			{ ##>
+			string whereSql = "";
+<#
+			string prefix = "";
+			foreach(IColumn column in relation.ChildColumns)
+			{
+				if(column.Nullable)
+				{ ##>
+<#					if(IsValueType(column))
+					{ ##>
+			if(<#= GetParameterName(column, false) #>Null)
+<#					}
+					else
+					{ ##>
+			if(null == <#= GetParameterName(column, true) #>)
+<#					} ##>
+				whereSql += "<#= prefix + GetSqlName(column.Name) #> IS NULL";
+			else
+	<# /* Indent */ ##>
+<#				} ##>
+			whereSql += "<#= prefix + GetSqlName(column.Name) #>=" + _db.CreateSqlParameterName("<#= GetSqlParameterName(column) #>");
+<#			prefix = " AND ";
+			} // End foreach(IColumn column in relation.ChildColumns) ##>
+
+			IDbCommand cmd = CreateDeleteCommand(whereSql);
+<#			} // End else of if(GenerateStoredProcedures) ##>
+<#			foreach(IColumn column in relation.ChildColumns)
+			{ ##>
+<#				if(column.Nullable && !GenerateStoredProcedures)
+				{ ##>
+<#					if(IsValueType(column))
+					{ ##>
+			if(!<#= GetParameterName(column, false) #>Null)
+<#					}
+					else
+					{ ##>
+			if(null != <#= GetParameterName(column, true) #>)
+<#					} ##>
+	<# /* Indent */ ##>
+<#				}
+				string valueCode;
+				if(column.Nullable && GenerateStoredProcedures && IsValueType(column))
+				{
+					valueCode = GetParameterName(column, false) + 
+						"Null ? null : (object)" + GetParameterName(column, true);
+				}
+				else
+					valueCode = GetParameterName(column, true); ##>
+			AddParameter(cmd, "<#= GetSqlParameterName(column) #>", <#= valueCode #>);
+<#			} ##>
+			return cmd;
+		}
+<#		} // End of foreach(IRelation relation in Table.ParentRelations) ##>
+
+		/// <summary>
+		/// Deletes <c><#= Table.Name #></c> records that match the specified criteria.
+		/// </summary>
+		/// <param name="whereSql">The SQL search condition. 
+		/// For example: <c>"FirstName='Smith' AND Zip=75038"</c>.</param>
+		/// <returns>The number of deleted records.</returns>
+		public int Delete(string whereSql)
+		{
+			return CreateDeleteCommand(whereSql).ExecuteNonQuery();
+		}
+
+		/// <summary>
+		/// Creates an <see cref="System.Data.IDbCommand"/> object that can be used 
+		/// to delete <c><#= Table.Name #></c> records that match the specified criteria.
+		/// </summary>
+		/// <param name="whereSql">The SQL search condition. 
+		/// For example: <c>"FirstName='Smith' AND Zip=75038"</c>.</param>
+		/// <returns>A reference to the <see cref="System.Data.IDbCommand"/> object.</returns>
+		protected virtual IDbCommand CreateDeleteCommand(string whereSql)
+		{
+			string sql = "DELETE FROM <#= GetFullTableName(Table) #>";
+			if(null != whereSql && 0 < whereSql.Length)
+				sql += " WHERE " + whereSql;
+			return _db.CreateCommand(sql);
+		}
+
+		/// <summary>
+		/// Deletes all records from the <c><#= Table.Name #></c> <#= GetTableView() #>.
+		/// </summary>
+		/// <returns>The number of deleted records.</returns>
+		public int DeleteAll()
+		{
+<#			if(GenerateStoredProcedures)
+			{ ##>
+			return _db.CreateCommand("<#= GetDeleteAllProcName(Table) #>", true).ExecuteNonQuery();
+<#			}
+			else
+			{ ##>
+			return Delete("");
+<#			} ##>
+		}
+<#		} // End of if(Table.Updatable) ##>
+
+		/// <summary>
+		/// Reads data using the specified command and returns 
+		/// an array of mapped objects.
+		/// </summary>
+		/// <param name="command">The <see cref="System.Data.IDbCommand"/> object.</param>
+		/// <returns>An array of <see cref="<#= GetRowClassName(Table) #>"/> objects.</returns>
+		protected <#= GetRowClassName(Table) #>[] MapRecords(IDbCommand command)
+		{
+			using(IDataReader reader = _db.ExecuteReader(command))
+			{
+				return MapRecords(reader);
+			}
+		}
+
+		/// <summary>
+		/// Reads data from the provided data reader and returns 
+		/// an array of mapped objects.
+		/// </summary>
+		/// <param name="reader">The <see cref="System.Data.IDataReader"/> object to read data from the <#= GetTableView() #>.</param>
+		/// <returns>An array of <see cref="<#= GetRowClassName(Table) #>"/> objects.</returns>
+		protected <#= GetRowClassName(Table) #>[] MapRecords(IDataReader reader)
+		{
+			int totalRecordCount = -1;
+			return MapRecords(reader, 0, int.MaxValue, ref totalRecordCount);
+		}
+
+		/// <summary>
+		/// Reads data from the provided data reader and returns 
+		/// an array of mapped objects.
+		/// </summary>
+		/// <param name="reader">The <see cref="System.Data.IDataReader"/> object to read data from the <#= GetTableView() #>.</param>
+		/// <param name="startIndex">The index of the first record to map.</param>
+		/// <param name="length">The number of records to map.</param>
+		/// <param name="totalRecordCount">A reference parameter that returns the total number 
+		/// of records in the reader object if 0 was passed into the method; otherwise it returns -1.</param>
+		/// <returns>An array of <see cref="<#= GetRowClassName(Table) #>"/> objects.</returns>
+		protected virtual <#= GetRowClassName(Table) #>[] MapRecords(IDataReader reader, 
+										int startIndex, int length, ref int totalRecordCount)
+		{
+			if(0 > startIndex)
+				throw new ArgumentOutOfRangeException("startIndex", startIndex, "StartIndex cannot be less than zero.");
+			if(0 > length)
+				throw new ArgumentOutOfRangeException("length", length, "Length cannot be less than zero.");
+
+<#			foreach(IColumn column in Table.Columns)
+			{ ##>
+			int <#= GetColumnIndexVariableName(column) #> = reader.GetOrdinal("<#= column.Name #>");
+<#			} ##>
+
+			System.Collections.ArrayList recordList = new System.Collections.ArrayList();
+			int ri = -startIndex;
+			while(reader.Read())
+			{
+				ri++;
+				if(ri > 0 && ri <= length)
+				{
+					<#= GetRowClassName(Table) #> record = new <#= GetRowClassName(Table) #>();
+					recordList.Add(record);
+
+<#					foreach(IColumn column in Table.Columns)
+					{
+						if(column.Nullable)
+						{ ##>
+					if(!reader.IsDBNull(<#=GetColumnIndexVariableName(column)#>))
+	<#					} ##>
+					record.<#= GetPropertyName(column) #> = <#= GetReaderCode(column) #>;
+<#					} ##>
+
+					if(ri == length && 0 != totalRecordCount)
+						break;
+				}
+			}
+
+			totalRecordCount = 0 == totalRecordCount ? ri + startIndex : -1;
+			return (<#= GetRowClassName(Table) #>[])(recordList.ToArray(typeof(<#= GetRowClassName(Table) #>)));
+		}
+
+		/// <summary>
+		/// Reads data using the specified command and returns 
+		/// a filled <see cref="System.Data.DataTable"/> object.
+		/// </summary>
+		/// <param name="command">The <see cref="System.Data.IDbCommand"/> object.</param>
+		/// <returns>A reference to the <see cref="System.Data.DataTable"/> object.</returns>
+		protected DataTable MapRecordsToDataTable(IDbCommand command)
+		{
+			using(IDataReader reader = _db.ExecuteReader(command))
+			{
+				return MapRecordsToDataTable(reader);
+			}
+		}
+
+		/// <summary>
+		/// Reads data from the provided data reader and returns 
+		/// a filled <see cref="System.Data.DataTable"/> object.
+		/// </summary>
+		/// <param name="reader">The <see cref="System.Data.IDataReader"/> object to read data from the <#= GetTableView() #>.</param>
+		/// <returns>A reference to the <see cref="System.Data.DataTable"/> object.</returns>
+		protected DataTable MapRecordsToDataTable(IDataReader reader)
+		{
+			int totalRecordCount = 0;
+			return MapRecordsToDataTable(reader, 0, int.MaxValue, ref totalRecordCount);
+		}
+		
+		/// <summary>
+		/// Reads data from the provided data reader and returns 
+		/// a filled <see cref="System.Data.DataTable"/> object.
+		/// </summary>
+		/// <param name="reader">The <see cref="System.Data.IDataReader"/> object to read data from the <#= GetTableView() #>.</param>
+		/// <param name="startIndex">The index of the first record to read.</param>
+		/// <param name="length">The number of records to read.</param>
+		/// <param name="totalRecordCount">A reference parameter that returns the total number 
+		/// of records in the reader object if 0 was passed into the method; otherwise it returns -1.</param>
+		/// <returns>A reference to the <see cref="System.Data.DataTable"/> object.</returns>
+		protected virtual DataTable MapRecordsToDataTable(IDataReader reader, 
+										int startIndex, int length, ref int totalRecordCount)
+		{
+			if(0 > startIndex)
+				throw new ArgumentOutOfRangeException("startIndex", startIndex, "StartIndex cannot be less than zero.");
+			if(0 > length)
+				throw new ArgumentOutOfRangeException("length", length, "Length cannot be less than zero.");
+
+			int columnCount = reader.FieldCount;
+			int ri = -startIndex;
+			
+			DataTable dataTable = CreateDataTable();
+			dataTable.BeginLoadData();
+			object[] values = new object[columnCount];
+
+			while(reader.Read())
+			{
+				ri++;
+				if(ri > 0 && ri <= length)
+				{
+					reader.GetValues(values);
+					dataTable.LoadDataRow(values, true);
+
+					if(ri == length && 0 != totalRecordCount)
+						break;
+				}
+			}
+			dataTable.EndLoadData();
+
+			totalRecordCount = 0 == totalRecordCount ? ri + startIndex : -1;
+			return dataTable;
+		}
+
+		/// <summary>
+		/// Converts <see cref="System.Data.DataRow"/> to <see cref="<#= GetRowClassName(Table) #>"/>.
+		/// </summary>
+		/// <param name="row">The <see cref="System.Data.DataRow"/> object to be mapped.</param>
+		/// <returns>A reference to the <see cref="<#= GetRowClassName(Table) #>"/> object.</returns>
+		protected virtual <#= GetRowClassName(Table) #> MapRow(DataRow row)
+		{
+			<#= GetRowClassName(Table) #> mappedObject = new <#= GetRowClassName(Table) #>();
+			DataTable dataTable = row.Table;
+			DataColumn dataColumn;
+<#			foreach(IColumn column in Table.Columns)
+			{ ##>
+			// Column "<#= column.CodeName #>"
+			dataColumn = dataTable.Columns["<#= column.CodeName #>"];
+			if(!row.IsNull(dataColumn))
+				mappedObject.<#= GetPropertyName(column) #> = (<#= GetDotNetTypeName(column) #>)row[dataColumn];
+<#			} ##>
+			return mappedObject;
+		}
+
+		/// <summary>
+		/// Creates a <see cref="System.Data.DataTable"/> object for 
+		/// the <c><#= Table.Name #></c> <#= GetTableView() #>.
+		/// </summary>
+		/// <returns>A reference to the <see cref="System.Data.DataTable"/> object.</returns>
+		protected virtual DataTable CreateDataTable()
+		{
+			DataTable dataTable = new DataTable();
+			dataTable.TableName = "<#= Table.CodeName #>";
+			DataColumn dataColumn;
+<#			foreach(IColumn column in Table.Columns)
+			{ ##>
+			dataColumn = dataTable.Columns.Add("<#= column.CodeName #>", typeof(<#= GetDotNetTypeName(column) #>));
+<#				if(column.DisplayName != column.CodeName)
+				{ ##>
+			dataColumn.Caption = "<#= column.DisplayName #>";
+<#				} ##>
+<#				if(0 < column.Length && int.MaxValue > column.Length &&
+					SharedUtils.GetDotNetType(column, false) == typeof(string))
+				{ ##>
+			dataColumn.MaxLength = <#= column.Length #>;
+<#				} ##>
+<#				if(!column.Nullable)
+				{ ##>
+			dataColumn.AllowDBNull = false;
+<#				} ##>
+<#				if(column.ReadOnly || !Table.Updatable)
+				{ ##>
+			dataColumn.ReadOnly = true;
+<#				} ##>
+<#				if(column.AutoIncrement)
+				{ ##>
+			dataColumn.Unique = true;
+			dataColumn.AutoIncrement = true;
+<#				} ##>
+<#			} ##>
+			return dataTable;
+		}
+		
+		/// <summary>
+		/// Adds a new parameter to the specified command.
+		/// </summary>
+		/// <param name="cmd">The <see cref="System.Data.IDbCommand"/> object to add the parameter to.</param>
+		/// <param name="paramName">The name of the parameter.</param>
+		/// <param name="value">The value of the parameter.</param>
+		/// <returns>A reference to the added parameter.</returns>
+		protected virtual IDbDataParameter AddParameter(IDbCommand cmd, string paramName, object value)
+		{
+			IDbDataParameter parameter;
+			switch(paramName)
+			{
+<#				foreach(IColumn column in Table.Columns)
+				{ ##>			
+				case "<#= GetSqlParameterName(column) #>":
+<#					string dbParamPrefix = "";
+					if(GenerateStoredProcedures && SharedUtils.IsOracle(Table.Database))
+						dbParamPrefix = "\"i_\" + ";
+
+					if(column.DbType == DbType.DateTime && SharedUtils.IsAccess(Table.Database))
+					{ ##>
+					if(null != value)
+					{
+						DateTime dtm = (DateTime)value;
+						// MS Access does not support milliseconds
+						value = dtm.AddMilliseconds(-dtm.Millisecond);
+					}
+<#					} ##>				
+					parameter = _db.AddParameter(cmd, <#= dbParamPrefix #>paramName, DbType.<#= column.DbType.ToString() #>, value);
+					break;
+
+<#				} ##>
+				default:
+					throw new ArgumentException("Unknown parameter name (" + paramName + ").");
+			}
+			return parameter;
+		}
+	} // End of <#= GetClassName() #> class
+}  // End of namespace
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.Collections;
+using System.Data;
+using System.Text;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	enum ValueNullableParameter
+	{
+		Ignore,
+		GenerateFalse,
+		GenerateParamNull
+	}
+
+	private ITable Table
+	{
+		get { return (ITable)Environment["Table"]; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return SharedUtils.GetBaseClassRelativePath(GetClassName() + ".cs"); }
+	}
+	
+	private string GetClassName()
+	{
+		return GetTableClassName(Table) + "_Base";
+	}
+	
+	private string GetUserClassName()
+	{
+		return GetTableClassName(Table);
+	}
+	
+	private string GetTableClassName(ITable table)
+	{
+		return SharedUtils.GetGatewayClassName(table);
+	}
+	
+	private string GetTableView()
+	{
+		return Table.View ? "view" : "table";
+	}
+
+	private string GetRowClassName(ITable table)
+	{
+		return table.CodeName + "Row";
+	}
+
+	private string GetDbClassName()
+	{
+		return Table.Database.CodeName;
+	}
+	
+	private bool IsValueType(IColumn column)
+	{
+		return SharedUtils.ToDotNetType(column.OleDbType).IsValueType;
+	}
+	
+	private bool ShouldGenerateNullableProperty(IColumn column)
+	{
+		return column.Nullable && IsValueType(column);
+	}
+	
+	private string GetColumnIndexVariableName(IColumn column)
+	{
+		return SharedUtils.GetParameterName(column.CodeName, false) + "ColumnIndex";
+	}
+	
+	private string GetSqlParameterName(IColumn column)
+	{
+		return column.CodeName;
+	}
+
+	private string GetPropertyName(IColumn column)
+	{
+		return SharedUtils.GetPropertyName(column.CodeName);
+	}
+	
+	private Type GetDotNetType(IColumn column)
+	{
+		return SharedUtils.GetDotNetType(column, false);
+	}
+	
+	private string GetDotNetTypeName(IColumn column)
+	{
+		return SharedUtils.GetCSharpTypeName(GetDotNetType(column));
+	}
+
+	private void WriteDeclareMethodParameterList(IColumn[] columns, bool writeValueNullable)
+	{
+		bool firstItem = true;
+		foreach(IColumn column in columns)
+		{
+			if(firstItem)
+				firstItem = false;
+			else
+				Writer.Write(", ");
+
+			Writer.Write(GetDotNetTypeName(column));
+			Writer.Write(' ');
+			Writer.Write(GetParameterName(column, true));
+			if(writeValueNullable && column.Nullable && IsValueType(column))
+			{
+				Writer.Write(", bool ");
+				Writer.Write(GetParameterName(column, false));
+				Writer.Write("Null");
+			}
+		}	
+	}
+
+	private void WriteCallMethodParameterList(IColumn[] columns, string rowObjName, 
+					bool property, ValueNullableParameter valueNullableParameter)
+	{
+		bool firstItem = true;
+		foreach(IColumn column in columns)
+		{
+			if(firstItem)
+				firstItem = false;
+			else
+				Writer.Write(", ");
+
+			if(null != rowObjName && 0 < rowObjName.Length)
+			{
+				Writer.Write(rowObjName);
+				Writer.Write('.');
+			}
+			if(property)
+			{
+				Writer.Write(GetPropertyName(column));
+			}
+			else
+			{
+				string paramName = GetParameterName(column, true);
+				Writer.Write(paramName);
+				
+				if(column.Nullable && IsValueType(column))
+				{
+					if(valueNullableParameter == ValueNullableParameter.GenerateFalse)
+						Writer.Write(", false");
+					else if(valueNullableParameter == ValueNullableParameter.GenerateParamNull)
+						Writer.Write(", " + paramName + "Null");
+				}				
+			}
+		}	
+	}
+	
+	private bool HasNullableValueTypeColumn(IColumn[] columns)
+	{
+		foreach(IColumn column in columns)
+		{
+			if(column.Nullable && IsValueType(column))
+				return true;
+		}
+		return false;
+	}
+	
+	private string GetParameterName(IColumn column, bool checkForKeyword)
+	{
+		return SharedUtils.GetParameterName(column.CodeName, checkForKeyword);
+	}
+	
+	private string GetFullTableName(ITable table)
+	{
+		string fullName = "";
+		if(!SharedUtils.IsMySQL(table.Database))
+		{
+			if(null != table.Schema && 0 < table.Schema.Length)
+				fullName += GetSqlName(table.Schema) + ".";
+		}
+			
+		fullName += GetSqlName(table.Name);
+		return fullName;
+	}
+
+	private string GetSqlName(string name)
+	{
+		return SharedUtils.GetSqlName(name, Table.Database);
+	}
+	
+	private string GetReaderCode(IColumn column)
+	{
+		string cast = "";
+		string converter = "";
+		string method = "GetValue";
+		
+		Type columnType = GetDotNetType(column);
+		if(columnType == typeof(byte[]))
+			cast = "(byte[])";
+		else if(columnType == typeof(TimeSpan))
+			cast = "(TimeSpan)";
+		else if(columnType == typeof(Guid))
+			method = "GetGuid";
+		else if(columnType != typeof(object))
+		{
+			method = "GetValue";
+			converter = "Convert.To" + columnType.Name + "(";
+		}
+
+		string code = cast + converter + "reader." + method + "(" + GetColumnIndexVariableName(column) + ")";
+		if(0 < converter.Length)
+			code += ")";
+		return code;
+	}
+	
+	private bool GenerateStoredProcedures
+	{
+		get { return SharedUtils.GetGenerateStoredProcedures(Table.Database); }
+	}
+	
+	private string GetNamespace()
+	{
+		return SharedUtils.GetDbTierBaseNamespace(Table.Database);
+	}
+	
+	private string GetGetAllProcName(ITable table)
+	{
+		if(SharedUtils.IsOracle(Table.Database))
+			return Database_PackageDeclaration_Oracle.GetGetAllProcName(table, true);
+		return Database_StoredProcedures_MSSQL_SybaseAse.GetGetAllProcName(table, false);
+	}
+	
+	private string GetGetByKeyProcName(ITable table)
+	{
+		if(SharedUtils.IsOracle(Table.Database))
+			return Database_PackageDeclaration_Oracle.GetGetByKeyProcName(table, true);
+		return Database_StoredProcedures_MSSQL_SybaseAse.GetGetByKeyProcName(table, false);
+	}
+	
+	private string GetGetByForeignKeyProcName(IRelation relation)
+	{
+		if(SharedUtils.IsOracle(Table.Database))
+			return Database_PackageDeclaration_Oracle.GetGetByForeignKeyProcName(relation, true);
+		return Database_StoredProcedures_MSSQL_SybaseAse.GetGetByForeignKeyProcName(relation, false);
+	}
+	
+	private string GetInsertProcName(ITable table)
+	{
+		if(SharedUtils.IsOracle(Table.Database))
+			return Database_PackageDeclaration_Oracle.GetInsertProcName(table, true);
+		return Database_StoredProcedures_MSSQL_SybaseAse.GetInsertProcName(table, false);
+	}
+	
+	private string GetUpdateProcName(ITable table)
+	{
+		if(SharedUtils.IsOracle(Table.Database))
+			return Database_PackageDeclaration_Oracle.GetUpdateProcName(table, true);
+		return Database_StoredProcedures_MSSQL_SybaseAse.GetUpdateProcName(table, false);
+	}
+	
+	private string GetDeleteByKeyProcName(ITable table)
+	{
+		if(SharedUtils.IsOracle(Table.Database))
+			return Database_PackageDeclaration_Oracle.GetDeleteByKeyProcName(table, true);
+		return Database_StoredProcedures_MSSQL_SybaseAse.GetDeleteByKeyProcName(table, false);
+	}
+	
+	private string GetDeleteByForeignKeyProcName(IRelation relation)
+	{
+		if(SharedUtils.IsOracle(Table.Database))
+			return Database_PackageDeclaration_Oracle.GetDeleteByForeignKeyProcName(relation, true);
+		return Database_StoredProcedures_MSSQL_SybaseAse.GetDeleteByForeignKeyProcName(relation, false);
+	}
+	
+	private string GetDeleteAllProcName(ITable table)
+	{
+		if(SharedUtils.IsOracle(Table.Database))
+			return Database_PackageDeclaration_Oracle.GetDeleteAllProcName(table, true);
+		return Database_StoredProcedures_MSSQL_SybaseAse.GetDeleteAllProcName(table, false);
+	}
+##>

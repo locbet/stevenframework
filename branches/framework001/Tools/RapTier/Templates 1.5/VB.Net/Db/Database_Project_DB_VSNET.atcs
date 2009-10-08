@@ -1,0 +1,264 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+<VisualStudioProject>
+    <VisualBasic
+        ProjectType = "Local"
+        ProductVersion = "<#= ProductVersion #>"
+        SchemaVersion = "<#= ShemaVersion #>"
+        ProjectGuid = "<#= GetDbProjectId() #>"
+    >
+        <Build>
+            <Settings
+				ApplicationIcon = ""
+				AssemblyKeyContainerName = ""
+				AssemblyName = "<#= SharedUtils.GetBaseDbTierNamespace(Database) #>"
+				AssemblyOriginatorKeyFile = ""
+				AssemblyOriginatorKeyMode = "None"
+				DefaultClientScript = "JScript"
+				DefaultHTMLPageLayout = "Grid"
+				DefaultTargetSchema = "IE50"
+				DelaySign = "false"
+				OutputType = "Library"
+				RootNamespace = "<#= SharedUtils.GetBaseDbTierNamespace(Database) #>"
+				OptionCompare = "Binary"
+				OptionExplicit = "On"
+				OptionStrict = "Off"
+				StartupObject = ""
+			>
+                <Config
+                    Name = "Debug"
+                    BaseAddress = "285212672"
+                    ConfigurationOverrideFile = ""
+                    DefineConstants = ""
+                    DefineDebug = "true"
+                    DefineTrace = "true"
+                    DebugSymbols = "true"
+                    IncrementalBuild = "true"
+                    Optimize = "false"
+                    OutputPath = "bin\"
+                    RegisterForComInterop = "false"
+                    RemoveIntegerChecks = "false"
+                    TreatWarningsAsErrors = "false"
+                    WarningLevel = "1"
+                />
+                <Config
+                    Name = "Release"
+                    BaseAddress = "285212672"
+                    ConfigurationOverrideFile = ""
+                    DefineConstants = ""
+                    DefineDebug = "false"
+                    DefineTrace = "true"
+                    DebugSymbols = "false"
+                    IncrementalBuild = "false"
+                    Optimize = "true"
+                    OutputPath = "bin\"
+                    RegisterForComInterop = "false"
+                    RemoveIntegerChecks = "false"
+                    TreatWarningsAsErrors = "false"
+                    WarningLevel = "1"
+                />
+            </Settings>
+            <References>
+                <Reference
+                    Name = "System"
+                    AssemblyName = "System"
+                />
+                <Reference
+                    Name = "System.Data"
+                    AssemblyName = "System.Data"
+                />
+                <Reference
+                    Name = "System.Xml"
+                    AssemblyName = "System.Xml"
+                />
+            </References>
+			<Imports>
+				<Import Namespace = "Microsoft.VisualBasic" />
+				<Import Namespace = "System" />
+				<Import Namespace = "System.Data" />
+				<Import Namespace = "System.Collections" />
+			</Imports>
+        </Build>
+        <Files>
+            <Include>
+                <File
+                    RelPath = "AssemblyInfo.vb"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "<#= SharedUtils.GetBaseClassRelativePath(Database.CodeName + "_Base.vb") #>"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "<#= SharedUtils.GetUserClassRelativePath(Database.CodeName + ".vb") #>"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+<#
+	foreach(ITable table in Database.Tables)
+	{ ##>
+                <File
+                    RelPath = "<#= SharedUtils.GetBaseClassRelativePath(table.CodeName + "Row_Base.vb") #>"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "<#= SharedUtils.GetUserClassRelativePath(table.CodeName + "Row.vb") #>"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "<#= SharedUtils.GetBaseClassRelativePath(SharedUtils.GetGatewayClassName(table) + "_Base.vb") #>"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "<#= SharedUtils.GetUserClassRelativePath(SharedUtils.GetGatewayClassName(table) + ".vb") #>"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+<#	} ##>
+<#	if(SharedUtils.GenerateStoredProcedureWrapper(Database))
+	{ ##>
+				<File
+					RelPath = "<#= SharedUtils.GetBaseClassRelativePath("StoredProcedures_Base.vb") #>"
+					SubType = "Code"
+					BuildAction = "Compile"
+				/>
+				<File
+					RelPath = "<#= SharedUtils.GetUserClassRelativePath("StoredProcedures.vb") #>"
+					SubType = "Code"
+					BuildAction = "Compile"
+				/>
+<#	} ##>
+<#				if(SharedUtils.GetGenerateStoredProcedures(Database))
+				{
+					if(SharedUtils.IsSQLServerOrSybaseAse(Database))
+					{
+						string suffix = SharedUtils.IsSQLServer(Database) ? "_MSSQL.sql" : "_SybaseAse.sql";
+					  ##>
+                <File
+                    RelPath = "Sql\<#= Database.CodeName + suffix #>"
+                    SubType = "Code"
+                    BuildAction = "Content"
+                />
+<#					}
+					else if(SharedUtils.IsOracle(Database))
+					{ ##>
+                <File
+                    RelPath = "Sql\<#= Database.CodeName #>_PackageBody_Oracle.sql"
+                    SubType = "Code"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "Sql\<#= Database.CodeName #>_PackageDeclaration_Oracle.sql"
+                    SubType = "Code"
+                    BuildAction = "Content"
+                />
+<#					}
+				} ##>
+            </Include>
+        </Files>
+    </VisualBasic>
+</VisualStudioProject>
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.IO;
+using System.Text;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override bool Enabled
+	{
+		get { return TargetIDE.StartsWith("VSNET"); }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return "Db.vbproj"; }
+	}
+	
+	private string GetProjectId(string key)
+	{
+		string value = (string)Environment.Session[key];
+		if(null == value)
+		{
+			value = Guid.NewGuid().ToString("B").ToUpper();
+			Environment.Session[key] = value;
+		}
+		return value;
+	}
+
+	private string GetDbProjectId()
+	{
+		return GetProjectId("DbProjectId");
+	}
+
+	private string GetSystemHintPath(string assemblyFile)
+	{
+		string frameworkDir = Path.GetDirectoryName(typeof(string).Assembly.Location);
+		return Path.Combine(frameworkDir, assemblyFile);
+	}
+	
+	private string TargetIDE
+	{
+		get { return Database.ExtendedProperties["TargetIDE"]; }
+	}
+	
+	private string ProductVersion
+	{
+		get
+		{
+			switch(TargetIDE)
+			{
+				case "VSNET2002":
+					return "7.0.9466";
+
+				case "VSNET2003":
+					return "7.10.3077";
+			}
+			return "Unknown";
+		}
+	}
+	
+	private string ShemaVersion
+	{
+		get
+		{
+			switch(TargetIDE)
+			{
+				case "VSNET2002":
+					return "1.0";
+
+				case "VSNET2003":
+					return "2.0";
+			}
+			return "Unknown";
+		}
+	}
+	
+	private bool IsVS2003OrLater
+	{
+		get { return TargetIDE != "VSNET2002"; }
+	}	
+##>

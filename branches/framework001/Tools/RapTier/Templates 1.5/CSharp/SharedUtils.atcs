@@ -1,0 +1,489 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+<#@ Imports
+using System;
+using System.IO;
+using System.Collections;
+using System.Data;
+using System.Data.OleDb;
+
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private static Hashtable _keyWordHashtable;
+	private static readonly string[] _keyWordArray = new string[]{
+		"abstract", "event", "new", "struct",
+		"as", "explicit", "null", "switch",
+		"base", "extern", "object", "this",
+		"bool", "false", "operator", "throw",
+		"break", "finally", "out", "true",
+		"byte", "fixed", "override", "try",
+		"case", "float", "params", "typeof",
+		"catch", "for", "private", "uint",
+		"char", "foreach", "protected", "ulong",
+		"checked", "goto", "public", "unchecked",
+		"class", "if", "readonly", "unsafe",
+		"const", "implicit", "ref", "ushort",
+		"continue", "in", "return", "using",
+		"decimal", "int", "sbyte", "virtual",
+		"default", "interface", "sealed", "volatile",
+		"delegate", "internal", "short", "void",
+		"do", "is", "sizeof", "while",
+		"double", "lock", "stackalloc",
+		"else", "long", "static",
+		"enum", "namespace", "string"
+	};
+	
+	static private IDatabase _database;
+	
+	public override bool Enabled
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return null; }
+	}
+	
+	// Static methods
+	
+	static internal void SetDatabase(IDatabase database)
+	{
+		_database = database;
+	}
+	
+	static internal string GetGatewayClassName(ITable table)
+	{
+		return table.CodeName + "Collection";
+	}
+
+	static internal bool GetGenerateStoredProcedures(IDatabase database)
+	{
+		return Convert.ToBoolean(database.ExtendedProperties["GenerateStoredProcedures"])
+			&& (IsSQLServerOrSybaseAse(database) || IsOracle(database));
+	}
+
+	static internal bool GetGenerateIdentity(IDatabase database)
+	{
+		return Convert.ToBoolean(database.ExtendedProperties["GenerateSqlIdentity"])
+			&& (IsSQLServerOrSybaseAse(database) || 
+				IsSybaseSqlAnywhere(database) ||
+				IsAccess(database) || 
+				IsMySQL(database));
+	}
+	
+	static internal string GetBaseDbTierNamespace(IDatabase database)
+	{
+		return database.ExtendedProperties["DbTierNamespace"];
+	}
+
+	static internal string GetDbTierBaseNamespace(IDatabase database)
+	{
+		string nspace = GetBaseDbTierNamespace(database);
+		if(null != BaseClassSubDirectory && 0 < BaseClassSubDirectory.Length)
+			nspace += '.' + BaseClassSubDirectory;
+		return nspace;
+	}
+
+	static internal string GetDbTierUserNamespace(IDatabase database)
+	{
+		string nspace = GetBaseDbTierNamespace(database);
+		if(null != UserClassSubDirectory && 0 < UserClassSubDirectory.Length)
+			nspace += '.' + UserClassSubDirectory;
+		return nspace;
+	}
+
+	static internal string GetWebUITierNamespace(IDatabase database)
+	{
+		return database.ExtendedProperties["WebUITierNamespace"];
+	}
+
+	static internal string GetWinUITierNamespace(IDatabase database)
+	{
+		return database.ExtendedProperties["WinUITierNamespace"];
+	}
+	
+	static string BaseClassSubDirectory
+	{
+		get { return ""; }
+	}
+
+	static string UserClassSubDirectory
+	{
+		get { return ""; }
+	}
+
+	static internal string GetBaseClassRelativePath(string fileName)
+	{
+		return Path.Combine(BaseClassSubDirectory, fileName);
+	}
+	
+	static internal string GetUserClassRelativePath(string fileName)
+	{
+		return Path.Combine(UserClassSubDirectory, fileName);
+	}
+	
+	static internal bool GetGenerateWinUI(IDatabase database)
+	{
+		return Convert.ToBoolean(database.ExtendedProperties["GenerateWinUI"]);
+	}
+
+	static internal bool GetGenerateWebUI(IDatabase database)
+	{
+		return Convert.ToBoolean(database.ExtendedProperties["GenerateWebUI"]);
+	}
+
+	static internal string CopyrightText
+	{
+		get
+		{
+			string value = _database.ExtendedProperties["Copyright"];
+			return null == value ? "" : value;
+		}
+	}
+	
+	static internal void WriteMultiLine(TextWriter writer, string text, string linePrefix)
+	{
+		StringReader reader = new StringReader(text);
+		string line;
+		while(null != (line = reader.ReadLine()))
+		{
+			writer.Write(linePrefix);
+			writer.WriteLine(line);
+		}
+	}
+
+	static internal string GetFieldName(string codeName)
+	{
+		return "_" + GetParameterName(codeName, false);
+	}
+
+	static internal string GetParameterName(string codeName, bool checkForKeyword)
+	{
+		bool allCapital = true;
+		foreach(char ch in codeName)
+		{
+			if(Char.IsLetter(ch) && Char.IsLower(ch))
+			{
+				allCapital = false;
+				break;
+			}
+		}
+		
+		string paramName;
+		if(allCapital)
+			paramName = codeName.ToLower();
+		else
+			paramName = Char.ToLower(codeName[0]) + codeName.Substring(1); 
+
+		if(checkForKeyword && IsKeyWord(paramName))
+			paramName = "@" + paramName;
+		return paramName;
+	}
+
+	static internal string GetPropertyName(string codeName)
+	{
+		return Char.ToUpper(codeName[0]) + codeName.Substring(1);
+	}
+	
+	private static bool IsKeyWord(string value)
+	{
+		if(null == value)
+			return false;
+
+		if(null == _keyWordHashtable)
+		{
+			_keyWordHashtable = new Hashtable();
+			foreach(string keyWork in _keyWordArray)
+			{
+				_keyWordHashtable.Add(keyWork, keyWork);
+			}
+		}
+		return _keyWordHashtable.Contains(value);
+	}
+	
+	public static bool GenerateStoredProcedureWrapper(IDatabase database)
+	{
+		return 0 < database.StoredProcedures.Count && IsSQLServerOrSybaseAse(database);
+	}
+
+	static internal string GetSqlName(string value, IDatabase database)
+	{
+		if(IsSQLServerOrSybaseAse(database) || IsAccess(database))
+			return "[" + value + "]";
+		return value;
+	}
+	
+	static internal bool IsAccess(IDatabase database)
+	{
+		return 0 == string.Compare("Access", database.ExtendedProperties["DbEngine"], true);
+	}
+	
+	static internal bool IsOracle(IDatabase database)
+	{
+		return 0 == string.Compare("Oracle", database.ExtendedProperties["DbEngine"], true);
+	}
+
+	static internal bool IsSQLServer(IDatabase database)
+	{
+		return 0 == string.Compare("MSSQL", database.ExtendedProperties["DbEngine"], true);
+	}
+
+	static internal bool IsSybaseAse(IDatabase database)
+	{
+		return 0 == string.Compare("SybaseAse", database.ExtendedProperties["DbEngine"], true);
+	}
+
+	static internal bool IsSQLServerOrSybaseAse(IDatabase database)
+	{
+		return IsSQLServer(database) || IsSybaseAse(database);
+	}
+
+	static internal bool IsSybaseSqlAnywhere(IDatabase database)
+	{
+		return 0 == string.Compare("SQLAnywhere", database.ExtendedProperties["DbEngine"], true);
+	}
+
+	static internal bool IsMySQL(IDatabase database)
+	{
+		return 0 == string.Compare("MySql", database.ExtendedProperties["DbEngine"], true);
+	}
+	
+	static internal string GetColumnListName(IColumn[] columns)
+	{
+		string columnListName = "";
+		foreach(IColumn column in columns)
+		{
+			if(0 < columnListName.Length)
+				columnListName += "_";
+			columnListName += column.CodeName;
+		}
+		return columnListName;
+	}
+	
+	static internal IColumn GetIdentityColumn(ITable table)
+	{
+		foreach(IColumn column in table.Columns)
+		{
+			if(column.AutoIncrement)
+				return column;
+		}
+		return null;
+	}
+
+	internal static Type ToDotNetType(OleDbType oleDbType)
+	{
+		switch(oleDbType)
+		{
+			case OleDbType.BigInt:
+				return typeof(long);
+
+			case OleDbType.Binary:
+				return typeof(byte[]);
+
+			case OleDbType.Boolean:
+				return typeof(bool);
+
+			case OleDbType.BSTR:
+				return typeof(string);
+
+			case OleDbType.Char:
+				return typeof(string);
+
+			case OleDbType.Currency:
+				return typeof(decimal);
+
+			case OleDbType.Date:
+				return typeof(DateTime);
+
+			case OleDbType.DBDate:
+				return typeof(DateTime);
+
+			case OleDbType.DBTime:
+				return typeof(TimeSpan);
+
+			case OleDbType.DBTimeStamp:
+				return typeof(DateTime);
+
+			case OleDbType.Decimal:
+				return typeof(decimal);
+
+			case OleDbType.Double:
+				return typeof(double);
+
+				//case OleDbType.Empty:
+				//	return typeof(Empty);
+
+			case OleDbType.Error:
+				return typeof(Exception);
+
+			case OleDbType.Filetime:
+				return typeof(DateTime);
+
+			case OleDbType.Guid:
+				return typeof(Guid);
+
+			case OleDbType.IDispatch:
+				return typeof(object);
+
+			case OleDbType.Integer:
+				return typeof(int);
+
+			case OleDbType.IUnknown:
+				return typeof(object);
+
+			case OleDbType.LongVarBinary:
+				return typeof(byte[]);
+
+			case OleDbType.LongVarChar:
+				return typeof(string);
+
+			case OleDbType.LongVarWChar:
+				return typeof(string);
+
+			case OleDbType.Numeric:
+				return typeof(decimal);
+
+			case OleDbType.PropVariant:
+				return typeof(object);
+
+			case OleDbType.Single:
+				return typeof(float);
+
+			case OleDbType.SmallInt:
+				return typeof(short);
+
+			case OleDbType.TinyInt:
+				return typeof(sbyte);
+
+			case OleDbType.UnsignedBigInt:
+				return typeof(ulong);
+
+			case OleDbType.UnsignedInt:
+				return typeof(uint);
+
+			case OleDbType.UnsignedSmallInt:
+				return typeof(ushort);
+
+			case OleDbType.UnsignedTinyInt:
+				return typeof(byte);
+
+			case OleDbType.VarBinary:
+				return typeof(byte[]);
+
+			case OleDbType.VarChar:
+				return typeof(string);
+
+			case OleDbType.Variant:
+				return typeof(object);
+
+			case OleDbType.VarNumeric:
+				return typeof(decimal);
+
+			case OleDbType.VarWChar:
+				return typeof(string);
+
+			case OleDbType.WChar:
+				return typeof(string);
+
+			default:
+				throw new ArgumentException("Unknown OleDbType " + oleDbType);
+		}
+	}
+
+	static internal Type GetDotNetType(IColumn column, bool convertNullableValueTypes)
+	{
+		Type dotNetType = ToDotNetType(column.OleDbType);
+		if(convertNullableValueTypes && column.Nullable && dotNetType.IsValueType)
+			dotNetType = typeof(object);
+		return dotNetType;
+	}
+
+	static internal string GetCSharpTypeName(Type type) 
+	{
+		string typeName = type.FullName;
+
+		string arraySuffix = null;
+		int arraySignIndex = typeName.IndexOf('[');
+		if(-1 != arraySignIndex)
+		{
+			arraySuffix = typeName.Substring(arraySignIndex);
+			typeName = typeName.Substring(0, arraySignIndex);
+		}
+
+		switch(typeName)
+		{
+			case "System.Void":
+				typeName = "void";
+				break;
+
+			case "System.Object":
+				typeName = "object";
+				break;
+
+			case "System.String":
+				typeName = "string";
+				break;
+
+			case "System.Boolean":
+				typeName = "bool";
+				break;
+
+			case "System.Int32":
+				typeName = "int";
+				break;
+
+			case "System.UInt32":
+				typeName = "uint";
+				break;
+
+			case "System.Int16":
+				typeName = "short";
+				break;
+
+			case "System.UInt16":
+				typeName = "ushort";
+				break;
+
+			case "System.Int64":
+				typeName = "long";
+				break;
+
+			case "System.UInt64":
+				typeName = "ulong";
+				break;
+
+			case "System.Byte":
+				typeName = "byte";
+				break;
+
+			case "System.SByte":
+				typeName = "sbyte";
+				break;
+
+			case "System.Decimal":
+				typeName = "decimal";
+				break;
+
+			case "System.Single":
+				typeName = "float";
+				break;
+
+			case "System.Double":
+				typeName = "double";
+				break;
+
+			case "System.Char":
+				typeName = "char";
+				break;
+
+			default:
+				return type.FullName;
+		}
+
+		return null == arraySuffix ? typeName : typeName + arraySuffix;
+	}
+#>

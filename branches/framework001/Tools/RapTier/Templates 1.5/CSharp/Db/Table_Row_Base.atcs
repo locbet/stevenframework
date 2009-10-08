@@ -1,0 +1,213 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+// <fileinfo name="<#= RelativeFilePath #>">
+//		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "//			"); ##>
+//		</copyright>
+//		<remarks>
+//			Do not change this source code manually. Changes to this file may 
+//			cause incorrect behavior and will be lost if the code is regenerated.
+//		</remarks>
+//		<generator rewritefile="<#= RewriteExistingFile #>">Steven</generator>
+// </fileinfo>
+
+using System;
+using System.Data;
+
+namespace <#= GetNamespace() #>
+{
+	/// <summary>
+	/// The base class for <see cref="<#= GetUserClassName() #>"/> that 
+	/// represents a record in the <c><#= Table.Name #></c> <#= GetTableView() #>.
+	/// </summary>
+	/// <remarks>
+	/// Do not change this source code manually. Update the <see cref="<#= GetUserClassName() #>"/>
+	/// class if you need to add or change some functionality.
+	/// </remarks>
+	public class <#= GetClassName() #>
+	{
+<#		foreach(IColumn column in Table.Columns)
+		{ ##>
+		private <#= GetDotNetTypeName(column)#> <#= GetFieldName(column) #>;
+<#		if(ShouldGenerateNullableProperty(column))
+		{ ##>
+		private bool <#= GetFieldName(column) #>Null = true;
+<#		} ##>
+<#		} ##>
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="<#= GetClassName() #>"/> class.
+		/// </summary>
+		public <#= GetClassName() #>()
+		{
+			// EMPTY
+		}
+
+<#		// Write properties
+		foreach(IColumn column in Table.Columns)
+		{ ##>
+		/// <summary>
+		/// Gets or sets the <c><#= column.Name #></c> column value.
+<#			if(column.Nullable)
+			{ ##>
+		/// This column is nullable.
+<#			} ##>		
+		/// </summary>
+		/// <value>The <c><#= column.Name #></c> column value.</value>
+		public <#= GetDotNetTypeName(column)#> <#= GetPropertyName(column) #>
+		{
+<#			if(ShouldGenerateNullableProperty(column))
+			{ ##>
+			get
+			{
+				if(Is<#= GetPropertyName(column) #>Null)
+					throw new InvalidOperationException("Cannot get value because it is DBNull.");
+				return <#= GetFieldName(column) #>;
+			}
+			set
+			{
+				<#= GetFieldName(column) #>Null = false;
+				<#= GetFieldName(column) #> = value;
+			}
+<#			}
+			else
+			{ ##>
+			get { return <#= GetFieldName(column) #>; }
+			set { <#= GetFieldName(column) #> = value; }
+<#			} ##>
+		}
+<#		if(ShouldGenerateNullableProperty(column))
+		{ ##>
+
+		/// <summary>
+		/// Indicates whether the <see cref="<#= GetPropertyName(column) #>"/>
+		/// property value is null.
+		/// </summary>
+		/// <value>true if the property value is null, otherwise false.</value>
+		public bool Is<#= GetPropertyName(column) #>Null
+		{
+			get { return <#= GetFieldName(column) #>Null; }
+			set { <#= GetFieldName(column) #>Null = value; }
+		}
+<#		}	// end if column.Nullable ##>
+
+<#		} ##>
+		/// <summary>
+		/// Returns <#= GetClassName() #> of this instance.
+		/// </summary>
+		/// <returns><#= GetClassName() #> of this instance.</returns>
+		public static <#= GetClassName() #> SetValue(IDataReader reader)
+		{
+			<#= GetClassName() #> info = new <#= GetClassName() #>();
+			<#			foreach(IColumn column in Table.Columns)
+						{ ##>
+int <#= GetColumnIndexVariableName(column) #> = reader.GetOrdinal("<#= column.Name #>");
+			<#			} ##>
+			
+			<#					foreach(IColumn column in Table.Columns)
+								{
+									if(column.Nullable)
+									{ ##>
+	if(!reader.IsDBNull(<#=GetColumnIndexVariableName(column)#>))
+				<#					} ##>
+info.<#= GetPropertyName(column) #> = <#= GetReaderCode(column) #>;
+	  <#            }##>return info;
+	  }
+	} // End of <#= GetClassName() #> class
+} // End of namespace
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.Data.OleDb;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private ITable Table
+	{
+		get { return (ITable)Environment["Table"]; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return SharedUtils.GetBaseClassRelativePath("Entity\\" + GetClassName() + ".cs"); }
+	}
+
+	private string GetClassName()
+	{
+		return Table.CodeName + "Info";
+	}
+	
+	private string GetUserClassName()
+	{
+		return Table.CodeName + "Row";
+	}
+	
+	private bool ShouldGenerateNullableProperty(IColumn column)
+	{
+		return column.Nullable && SharedUtils.ToDotNetType(column.OleDbType).IsValueType;
+	}
+	
+	private string GetFieldName(IColumn column)
+	{
+		return SharedUtils.GetFieldName(column.CodeName);
+	}
+	
+	private string GetPropertyName(IColumn column)
+	{
+		return SharedUtils.GetPropertyName(column.CodeName);
+	}
+	
+	private Type GetDotNetType(IColumn column)
+	{
+		return SharedUtils.GetDotNetType(column, false);
+	}
+	
+	private string GetDotNetTypeName(IColumn column)
+	{
+		return SharedUtils.GetCSharpTypeName(GetDotNetType(column));
+	}
+	
+	private string GetTableView()
+	{
+		return Table.View ? "view" : "table";
+	}	
+	private string GetNamespace()
+	{
+		return SharedUtils.GetDbTierBaseNamespace(Table.Database);
+	}
+	private string GetColumnIndexVariableName(IColumn column)
+	{
+		return SharedUtils.GetParameterName(column.CodeName, false) + "ColumnIndex";
+	}
+    private string GetReaderCode(IColumn column)
+	{
+		string cast = "";
+		string converter = "";
+		string method = "GetValue";
+		
+		Type columnType = GetDotNetType(column);
+		if(columnType == typeof(byte[]))
+			cast = "(byte[])";
+		else if(columnType == typeof(TimeSpan))
+			cast = "(TimeSpan)";
+		else if(columnType == typeof(Guid))
+			method = "GetGuid";
+		else if(columnType != typeof(object))
+		{
+			method = "GetValue";
+			converter = "Convert.To" + columnType.Name + "(";
+		}
+
+		string code = cast + converter + "reader." + method + "(" + GetColumnIndexVariableName(column) + ")";
+		if(0 < converter.Length)
+			code += ")";
+		return code;
+	}
+##>
