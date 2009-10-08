@@ -1,0 +1,149 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+<%@ Page language="vb" AutoEventWireup="false" Codebehind="<#= GetTableEditorClassName(Table) #>.aspx.vb" Inherits="<#= GetWebUITierNamespace() #>.Editors.<#= GetTableEditorClassName(Table) #>" %>
+<html>
+	<head>
+		<title><#= Table.Name #></title>
+		<meta name="GENERATOR" content="RapTier">
+		<link rel="STYLESHEET" href="../css/default.css">
+	</head>
+	<body leftmargin=5 topmargin=10>
+		<form id="<#= Table.CodeName #>" method="post" runat="server">
+			<asp:Label id=_errorLabel runat="server" ForeColor="Red" Visible="False"/>
+			<asp:DataGrid id="_grid" runat="server" Width="100%"
+					AutoGenerateColumns="false"
+					AllowSorting="true"
+					AllowPaging="True"
+					PageSize="10"
+					BorderColor="#AEC2DD"
+					BorderWidth="1"
+					GridLines="Both"
+					CellPadding="3"
+					CellSpacing="0"
+					ShowFooter="True">
+				<HeaderStyle CssClass="dgHeader"/>
+				<ItemStyle CssClass="dgItem"/>
+				<AlternatingItemStyle CssClass="dgAltItem"/>
+				<FooterStyle CssClass="dgFooter"/>
+				<PagerStyle Mode="NumericPages" HorizontalAlign="Left" CssClass="dgPager"/>
+				<Columns>
+<#				if(Table.Updatable)
+				{ ##>
+					<asp:TemplateColumn HeaderStyle-Width="60" ItemStyle-HorizontalAlign="Center" FooterStyle-HorizontalAlign="Center">
+						<HeaderTemplate>
+							<img src="../Images/n.gif" width=60 height=1>
+						</HeaderTemplate>
+						<ItemTemplate>
+							<asp:ImageButton CommandName="Edit" ImageUrl="../Images/Edit.gif" AlternateText="Edit Record" runat="server" ID="_editButton"/>
+						</ItemTemplate>
+						<EditItemTemplate>
+							<asp:ImageButton CommandName="Delete" ImageUrl="../Images/Delete.gif" AlternateText="Delete Record" runat="server" ID="_deleteButton"/>
+							<asp:ImageButton CommandName="Update" ImageUrl="../Images/Update.gif" AlternateText="Accept Changes" runat="server" ID="_updateButton"/>
+							<asp:ImageButton CommandName="Cancel" ImageUrl="../Images/Cancel.gif" AlternateText="Reject Changes" runat="server" ID="_cancelButton"/>
+						</EditItemTemplate>
+						<FooterTemplate>
+							<asp:ImageButton CommandName="Insert" ImageUrl="../Images/Insert.gif" AlternateText="Insert Record" runat="server" ID="_insertButton"/>
+						</FooterTemplate>
+					</asp:TemplateColumn>
+<#				} ##>
+<#				foreach(IColumn column in Table.Columns)
+				{
+					string sortExpressionAttr = "";
+					if(column.DbType != DbType.Binary && column.DbType != DbType.Object)
+						sortExpressionAttr = "SortExpression=\"" + column.CodeName + "\"";
+				
+					if(column.ReadOnly || !Table.Updatable || SharedUtils.ToDotNetType(column.OleDbType).IsArray)
+					{ ##>
+					<asp:BoundColumn ReadOnly="True" HeaderText="<#= column.DisplayName #>" DataField="<#= column.CodeName #>" <#= sortExpressionAttr #>/>
+<#					}
+					else
+					{ ##>
+					<asp:TemplateColumn HeaderText="<#= column.DisplayName #>" <#= sortExpressionAttr #>>
+						<ItemTemplate>
+							<asp:Label Text='<%# DataBinder.Eval(Container.DataItem, "<#= column.CodeName #>") %>' runat="server"/>
+						</ItemTemplate>
+						<EditItemTemplate>
+							<asp:TextBox Id="_<#= column.CodeName #>Txt" Width="100%" Text='<%# DataBinder.Eval(Container.DataItem, "<#= column.CodeName #>") %>' runat="server"/>
+						</EditItemTemplate>
+						<FooterTemplate>
+							<asp:TextBox Id="_<#= column.CodeName #>Txt" Width="100%" Text="" runat="server"/>
+						</FooterTemplate>
+					</asp:TemplateColumn>
+<#					}
+				} ##>
+				</Columns>
+			</asp:DataGrid>
+		</form>
+	</body>
+</html>
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.Collections;
+using System.Data;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private ITable Table
+	{
+		get { return (ITable)Environment["Table"]; }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return GetTableEditorClassName(Table) + ".aspx"; }
+	}
+
+	private string GetTableEditorClassName(ITable table)
+	{
+		return table.CodeName;
+	}
+
+	private string GetRowEditorClassName(ITable table)
+	{
+		return table.CodeName + "RowEditor";
+	}
+	
+	private string GetTableRowClassName(ITable table)
+	{
+		return table.CodeName + "Row";
+	}
+	
+	private string GetDotNetTypeName(IColumn column)
+	{
+		return SharedUtils.GetCSharpTypeName(SharedUtils.GetDotNetType(column, false));
+	}
+	
+	private string GetParameterName(IColumn column)
+	{
+		return Char.ToLower(column.CodeName[0]) + column.CodeName.Substring(1);
+	}
+	
+	private string GetWebUITierNamespace()
+	{
+		return SharedUtils.GetWebUITierNamespace(Table.Database);
+	}
+	
+	private string GetChildRelationName(IRelation relation)
+	{
+		return relation.ChildColumns[0].Table.CodeName;
+	}
+	
+	private string GetFullDbClassName()
+	{
+		return SharedUtils.GetDbTierUserNamespace(Table.Database) 
+					+ "." + Table.Database.CodeName;
+	}
+##>

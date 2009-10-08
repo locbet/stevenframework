@@ -1,0 +1,375 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+// <fileinfo name="<#= RelativeFilePath #>">
+//		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "//			"); ##>
+//		</copyright>
+//		<remarks>
+//			You can update this source code manually. If the file
+//			already exists it will not be rewritten by the generator.
+//		</remarks>
+//		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+// </fileinfo>
+
+using System;
+using System.Data;
+<#	if(GetNamespace() != SharedUtils.GetDbTierBaseNamespace(Database))
+	{ ##>
+using <#= SharedUtils.GetDbTierBaseNamespace(Database) #>;
+<#	} ##>
+
+namespace <#= GetNamespace() #>
+{
+	/// <summary>
+	/// Represents a connection to the <c><#= Database.CodeName #></c> database.
+	/// </summary>
+	/// <remarks>
+	/// If the <c><#= GetClassName() #></c> goes out of scope, the connection to the 
+	/// database is not closed automatically. Therefore, you must explicitly close the 
+	/// connection by calling the <c>Close</c> or <c>Dispose</c> method.
+	/// </remarks>
+<#	if(0 < Database.Tables.Count)
+	{ ##>
+	/// <example>
+	/// using(<#= GetClassName() #> db = new <#= GetClassName() #>())
+	/// {
+	///		<#= GetRowClassName(Database.Tables[0])#>[] rows = db.<#= 
+					GetTableClassName(Database.Tables[0]) #>.GetAll();
+	/// }
+	/// </example>
+<#	} ##>
+	public class <#= GetClassName() #> : <#= GetClassName() #>_Base
+	{
+		/// <summary>
+		/// Initializes a new instance of the <see cref="<#= GetClassName() #>"/> class.
+		/// </summary>
+		public <#= GetClassName() #>()
+		{
+			// EMPTY
+		}
+
+		/// <summary>
+		/// Creates a new connection to the database.
+		/// </summary>
+		/// <returns>An <see cref="System.Data.IDbConnection"/> object.</returns>
+		protected override IDbConnection CreateConnection()
+		{
+#if ODBC
+			return new System.Data.Odbc.OdbcConnection("INSERT ODBC CONNECTION STRING");
+<#	if(SharedUtils.IsSQLServer(Database))
+	{ ##>
+#elif SQL_CLIENT
+			return new System.Data.SqlClient.SqlConnection(
+				<#= QuoteSnippetStringCStyle(ConvertConnectionString(Database.Connection,
+						new string[]{"Initial Catalog", "Data Source", "Integrated Security", "User ID", "Password"},
+						null), "				") #>);
+<#	} ##>
+<#	if(SharedUtils.IsSybaseAse(Database))
+	{ ##>
+#elif ASE_CLIENT
+			return Sybase.Data.AseClient.AseConnection(
+				<#= QuoteSnippetStringCStyle(ConvertConnectionString(Database.Connection,
+						new string[]{"Database", "Data Source", "User ID", "Password"},
+						null), "				") #>);
+<#	} ##>
+<#	if(SharedUtils.IsOracle(Database))
+	{ ##>
+#elif ORACLE_CLIENT
+			return new System.Data.OracleClient.OracleConnection(
+				<#= QuoteSnippetStringCStyle(ConvertConnectionString(Database.Connection,
+						new string[]{"Data Source", "User ID", "Password"},
+						null), "				") #>);
+<#	} ##>
+<#	if(SharedUtils.IsMySQL(Database))
+	{ ##>
+#elif MYSQL_BYTE_FX
+			return new ByteFX.Data.MySqlClient.MySqlConnection(
+				<#= QuoteSnippetStringCStyle(ConvertConnectionString(Database.Connection,
+						new string[]{"Location", "Data Source", "User ID", "Password"},
+						new string[]{"Data Source", "Database", "User ID", "Password"}),
+							"				") #>);
+<#	} ##>
+#else
+			return new System.Data.OleDb.OleDbConnection(
+				<#
+				string dbConnString = Database.Connection;
+				if(SharedUtils.IsOracle(Database) && SharedUtils.GetGenerateStoredProcedures(Database)
+					&& -1 != dbConnString.ToLower().IndexOf("provider=oraoledb.oracle")
+					&& -1 == dbConnString.ToLower().IndexOf("plsqlrset="))
+				{
+					if(!dbConnString.EndsWith(";"))
+						dbConnString += ";";
+					dbConnString += "PLSQLRSet=1";
+				}				
+
+				string lowCaseDbConnString = dbConnString.ToLower();
+				if(-1 != lowCaseDbConnString.IndexOf("user id") && 
+							-1 == lowCaseDbConnString.IndexOf("password="))
+				{
+					Environment.AddWarning("The DB connection string does not include the database password." + 
+						" Create a new project and check the 'Allow Saving Password' checkbox, " +
+						"or change the connection string in the " + GetClassName() + " class manually.");
+				}
+				Writer.Write(QuoteSnippetStringCStyle(dbConnString, "				"));
+				#>);
+#endif
+		}
+		
+<#	if(SharedUtils.IsOracle(Database))
+	{ ##>
+#if ORACLE_CLIENT
+		/// <summary>
+		/// Creates <see cref="System.Data.IDataReader"/> for the specified DB command.
+		/// </summary>
+		/// <param name="command">The <see cref="System.Data.IDbCommand"/> object.</param>
+		protected internal override IDataReader ExecuteReader(IDbCommand command)
+		{
+			if(CommandType.StoredProcedure == command.CommandType 
+					&& !command.Parameters.Contains(CreateCollectionParameterName("o_cursor")))
+			{
+				IDbDataParameter parameter = AddParameter(command, "o_cursor", DbType.Object, null);
+				parameter.Direction = ParameterDirection.Output;
+				((System.Data.OracleClient.OracleParameter)parameter).OracleType = System.Data.OracleClient.OracleType.Cursor;
+			}
+			return base.ExecuteReader(command);
+		}
+#endif
+<#	} ##>
+
+		/// <summary>
+		/// Creates a DataTable object for the specified command.
+		/// </summary>
+		/// <param name="command">The <see cref="System.Data.IDbCommand"/> object.</param>
+		/// <returns>A reference to the <see cref="System.Data.DataTable"/> object.</returns>
+		protected internal DataTable CreateDataTable(IDbCommand command)
+		{
+			DataTable dataTable = new DataTable();
+#if ODBC
+			new System.Data.Odbc.OdbcDataAdapter((System.Data.Odbc.OdbcCommand)command).Fill(dataTable);
+<#	if(SharedUtils.IsSQLServer(Database))
+	{ ##>
+#elif SQL_CLIENT
+			new System.Data.SqlClient.SqlDataAdapter((System.Data.SqlClient.SqlCommand)command).Fill(dataTable);
+<#	} ##>
+<#	if(SharedUtils.IsSybaseAse(Database))
+	{ ##>
+#elif ASE_CLIENT
+			new Sybase.Data.AseClient.AseDataAdapter((Sybase.Data.AseClient.AseCommand)command).Fill(dataTable);
+<#	} ##>
+<#	if(SharedUtils.IsOracle(Database))
+	{ ##>
+#elif ORACLE_CLIENT
+			new System.Data.OracleClient.OracleDataAdapter((System.Data.OracleClient.OracleCommand)command).Fill(dataTable);
+<#	} ##>
+<#	if(SharedUtils.IsMySQL(Database))
+	{ ##>
+#elif MYSQL_BYTE_FX
+			new ByteFX.Data.MySqlClient.MySqlDataAdapter((ByteFX.Data.MySqlClient.MySqlCommand)command).Fill(dataTable);
+<#	} ##>
+#else
+			new System.Data.OleDb.OleDbDataAdapter((System.Data.OleDb.OleDbCommand)command).Fill(dataTable);
+#endif		
+			return dataTable;
+		}
+
+		/// <summary>
+		/// Returns a SQL statement parameter name that is specific for the data provider.
+		/// For example it returns ? for OleDb provider, or @paramName for MS SQL provider.
+		/// </summary>
+		/// <param name="paramName">The data provider neutral SQL parameter name.</param>
+		/// <returns>The SQL statement parameter name.</returns>
+		protected internal override string CreateSqlParameterName(string paramName)
+		{
+#if ODBC
+			return "?";
+<#	if(SharedUtils.IsSQLServer(Database))
+	{ ##>
+#elif SQL_CLIENT
+			return "@" + paramName;
+<#	} ##>
+<#	if(SharedUtils.IsSybaseAse(Database))
+	{ ##>
+#elif ASE_CLIENT
+			return "@" + paramName;
+<#	} ##>
+<#	if(SharedUtils.IsOracle(Database))
+	{ ##>
+#elif ORACLE_CLIENT
+			return ":" + paramName;
+<#	} ##>
+<#	if(SharedUtils.IsMySQL(Database))
+	{ ##>
+#elif MYSQL_BYTE_FX
+			return "@" + paramName;
+<#	} ##>
+#else
+			return "?";
+#endif
+		}
+
+		/// <summary>
+		/// Creates a .Net data provider specific parameter name that is used to
+		/// create a parameter object and add it to the parameter collection of
+		/// <see cref="System.Data.IDbCommand"/>.
+		/// </summary>
+		/// <param name="baseParamName">The base name of the parameter.</param>
+		/// <returns>The full data provider specific parameter name.</returns>
+		protected override string CreateCollectionParameterName(string baseParamName)
+		{
+#if ODBC
+			return "@" + baseParamName;
+<#	if(SharedUtils.IsOracle(Database))
+	{ ##>
+#elif ORACLE_CLIENT
+			return baseParamName;
+<#	} ##>
+#else
+			return "@" + baseParamName;
+#endif
+		}
+	} // End of <#= GetClassName() #> class
+} // End of namespace
+<#
+	// MyOleDb warning message 
+	if(SharedUtils.IsMySQL(Database))
+	{
+		Environment.AddWarning("The generated code uses the MyOleDb data provider"
+			+ " to connect to the database. It is recommended that you switch"
+			+ " to ByteFX or another MySql data provider. Check the RapTier"
+			+ " documentation to find out how you can do it.");
+	}
+#>
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.Collections.Specialized;
+using System.Text;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return SharedUtils.GetUserClassRelativePath(GetClassName() + ".cs"); }
+	}
+	
+	private string GetClassName()
+	{
+		return Database.CodeName;
+	}
+
+	private string GetNamespace()
+	{
+		return SharedUtils.GetDbTierUserNamespace(Database);
+	}
+	
+	private string GetTableClassName(ITable table)
+	{
+		return table.CodeName + (table.View ? "View" : "Table");
+	}
+
+	private string GetRowClassName(ITable table)
+	{
+		return table.CodeName + "Row";
+	}
+	
+	private string ConvertConnectionString(string conn, 
+						string[] oleDbParams, string[] targetDbParams)
+	{
+		StringDictionary propMap = new StringDictionary();
+		if(null == targetDbParams)
+			targetDbParams = oleDbParams;
+		for(int i = 0; i < oleDbParams.Length; i++)
+			propMap.Add(oleDbParams[i].ToLower(), targetDbParams[i]);
+
+		string targetDbConnection = "";
+		foreach(string property in Database.Connection.Split(';'))
+		{
+			int equalIndex = property.IndexOf('=');
+			if(0 < equalIndex && property.Length - 1 > equalIndex)
+			{
+				string targetDbPropName = propMap[property.Substring(0, equalIndex).ToLower()];
+				if(null != targetDbPropName)
+				{
+					if(0 < targetDbConnection.Length)
+						targetDbConnection += ";";
+					targetDbConnection += targetDbPropName + "=" + property.Substring(equalIndex + 1);
+				}
+			}
+		}
+		return targetDbConnection;
+	}
+
+	private string QuoteSnippetStringCStyle(string value, string indent)
+	{
+		int maxLength = 80 - indent.Length * 4;
+	
+		StringBuilder dynStr = new StringBuilder(value.Length + 5);
+		dynStr.Append("\"");
+
+		for(int i = 0; i < value.Length; i++)
+		{
+			char ch = value[i];
+			switch(ch)
+			{
+				case '\t':
+					dynStr.Append("\\t");
+					break;
+
+				case '\n':
+					dynStr.Append("\\n");
+					break;
+
+				case '\r':
+					dynStr.Append("\\r");
+					break;
+
+				case '"':
+					dynStr.Append("\\\"");
+					break;
+
+				case '\'':
+					dynStr.Append("\\'");
+					break;
+
+				case '\\':
+					dynStr.Append("\\\\");
+					break;
+
+				case '\0':
+					dynStr.Append("\\0");
+					break;
+
+				default:
+					dynStr.Append(ch);
+					break;
+			}
+
+			if(i > 0 && i % maxLength == 0)
+			{
+				dynStr.Append("\" +\r\n");
+				dynStr.Append(indent);
+				dynStr.Append("\"");
+			}
+		}
+
+		dynStr.Append("\"");
+		return dynStr.ToString();
+	}
+##>

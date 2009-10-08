@@ -1,0 +1,23 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+<#@ Imports
+using System;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	public override string RelativeFilePath
+	{
+		get { return null; }
+	}
+
+	public override bool Enabled
+	{
+		get
+		{
+			SharedUtils.SetDatabase((IDatabase)Environment["Database"]);
+			return true;
+		}
+	}
+##>

@@ -1,0 +1,102 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+' <fileinfo name="<#= RelativeFilePath #>">
+'		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "'			"); ##>
+'		</copyright>
+'		<remarks>
+'			You can update this source code manually. If the file
+'			already exists it will not be rewritten by the generator.
+'		</remarks>
+'		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+' </fileinfo>
+
+Option Strict Off
+Option Explicit On
+
+Imports System
+<#	if(GetNamespace() != SharedUtils.GetDbTierBaseNamespace(Table.Database))
+	{ ##>
+Imports <#= SharedUtils.GetDbTierBaseNamespace(Table.Database) #>
+<#	} ##>
+
+<#	if(0 < RelativeNamespace.Length)
+	{ ##>
+Namespace <#= RelativeNamespace #>
+<#	} ##>
+''' <summary>
+''' Represents the <c><#= Table.CodeName #></c> <#= GetTableView() #>.
+''' </summary>
+Public Class <#= GetClassName() #>
+		Inherits <#= GetClassName() #>_Base
+	''' <summary>
+	''' Initializes a new instance of the <see cref="<#= GetClassName() #>"/> class.
+	''' </summary>
+	''' <param name="db">The database object.</param>
+	Friend Sub New(db As <#= GetDbClassName() #>)
+		MyBase.New(db)
+		' EMPTY
+	End Sub
+End Class
+<#	if(0 < RelativeNamespace.Length)
+	{ ##>
+End Namespace
+<#	} ##>
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private ITable Table
+	{
+		get { return (ITable)Environment["Table"]; }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return SharedUtils.GetUserClassRelativePath(GetClassName() + ".vb"); }
+	}
+	
+	private string GetClassName()
+	{
+		return GetTableClassName(Table);
+	}
+	
+	private string GetTableClassName(ITable table)
+	{
+		return SharedUtils.GetGatewayClassName(table);
+	}
+	
+	private string GetTableView()
+	{
+		return Table.View ? "view" : "table";
+	}
+	
+	private string GetDbClassName()
+	{
+		return Table.Database.CodeName;
+	}
+
+	private string RelativeNamespace
+	{
+		get { return SharedUtils.UserClassSubDirectory; }
+	}
+
+	private string GetNamespace()
+	{
+		return SharedUtils.GetDbTierUserNamespace(Table.Database);
+	}
+##>
