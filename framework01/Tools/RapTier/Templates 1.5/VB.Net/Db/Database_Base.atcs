@@ -1,0 +1,340 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+' <fileinfo name="<#= RelativeFilePath #>">
+'		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "'			"); ##>
+'		</copyright>
+'		<remarks>
+'			Do not change this source code manually. Changes to this file may 
+'			cause incorrect behavior and will be lost if the code is regenerated.
+'		</remarks>
+'		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+' </fileinfo>
+
+Option Strict Off
+Option Explicit On
+
+Imports System
+Imports System.Data
+<#	if(GetNamespace() != SharedUtils.GetDbTierUserNamespace(Database))
+	{ ##>
+Imports <#= SharedUtils.GetDbTierUserNamespace(Database) #>
+<#	} ##>
+
+<#	if(0 < RelativeNamespace.Length)
+	{ ##>
+Namespace <#= RelativeNamespace #>
+<#	} ##>
+''' <summary>
+''' The base class for the <see cref="<#= GetUserClassName() #>"/> class that 
+''' represents a connection to the <c><#= Database.CodeName #></c> database. 
+''' </summary>
+''' <remarks>
+''' Do not change this source code. Modify the <#= GetUserClassName() #> class
+''' if you need to add or change some functionality.
+''' </remarks>
+Public MustInherit Class <#= GetClassName() #>
+		Implements IDisposable
+	Private _connection As IDbConnection
+	Private _transaction As IDbTransaction
+<#	if(SharedUtils.GenerateStoredProcedureWrapper(Database))
+	{ ##>
+	Private _storedProcedures As StoredProcedures
+<#	} ##>
+
+	' Table fields
+<#	foreach(ITable table in Database.Tables)
+	{ ##>
+	Private <#= GetTableFieldName(table) #> As <#= GetTableClassName(table) #>
+<#	} ##>
+
+	''' <summary>
+	''' Initializes a new instance of the <see cref="<#= GetClassName() #>"/> 
+	''' class and opens the database connection.
+	''' </summary>
+	Protected Sub New()
+		MyClass.New(True)
+	End Sub
+	
+	''' <summary>
+	''' Initializes a new instance of the <see cref="<#= GetClassName() #>"/> class.
+	''' </summary>
+	''' <param name="init">Specifies whether the constructor calls the
+	''' <see cref="InitConnection"/> method to initialize the database connection.</param>
+	Protected Sub New(init As Boolean)
+		MyBase.New()
+		If init Then
+			InitConnection()
+		End If
+	End Sub
+
+	''' <summary>
+	''' Initializes the database connection.
+	''' </summary>
+	Protected Sub InitConnection()
+		_connection = CreateConnection()
+		_connection.Open()
+	End Sub
+
+	''' <summary>
+	''' Creates a new connection to the database.
+	''' </summary>
+	''' <returns>A reference to the <see cref="System.Data.IDbConnection"/> object.</returns>
+	Protected MustOverride Function CreateConnection() As IDbConnection
+
+	''' <summary>
+	''' Returns a SQL statement parameter name that is specific for the data provider.
+	''' For example it returns ? for OleDb provider, or @paramName for MS SQL provider.
+	''' </summary>
+	''' <param name="paramName">The data provider neutral SQL parameter name.</param>
+	''' <returns>The SQL statement parameter name.</returns>
+	Protected Friend MustOverride Function CreateSqlParameterName(paramName As String) As String
+
+	''' <summary>
+	''' Creates <see cref="System.Data.IDataReader"/> for the specified DB command.
+	''' </summary>
+	''' <param name="command">The <see cref="System.Data.IDbCommand"/> object.</param>
+	''' <returns>A reference to the <see cref="System.Data.IDataReader"/> object.</returns>
+	Protected Friend Overridable Function ExecuteReader(command As IDbCommand) As IDataReader
+		Return command.ExecuteReader()
+	End Function
+
+	''' <summary>
+	''' Adds a new parameter to the specified command. It is not recommended that 
+	''' you use this method directly from your custom code. Instead use the 
+	''' <c>AddParameter</c> method of the &lt;TableCodeName&gt;Collection_Base classes.
+	''' </summary>
+	''' <param name="cmd">The <see cref="System.Data.IDbCommand"/> object to add the parameter to.</param>
+	''' <param name="paramName">The name of the parameter.</param>
+	''' <param name="dbType">One of the <see cref="System.Data.DbType"/> values. </param>
+	''' <param name="value">The value of the parameter.</param>
+	''' <returns>A reference to the added parameter.</returns>
+	Friend Function AddParameter(cmd As IDbCommand, paramName As String, _
+									dbType As DbType, value As Object) As IDbDataParameter
+		Dim parameter As IDbDataParameter = cmd.CreateParameter()
+		parameter.ParameterName = CreateCollectionParameterName(paramName)
+		parameter.DbType = dbType
+        If value Is Nothing Then
+            parameter.Value = DBNull.Value
+        Else
+            parameter.Value = value
+        End If
+		cmd.Parameters.Add(parameter)
+		return parameter
+	End Function
+
+	''' <summary>
+	''' Creates a .Net data provider specific name that is used by the 
+	''' <see cref="AddParameter"/> method.
+	''' </summary>
+	''' <param name="baseParamName">The base name of the parameter.</param>
+	''' <returns>The full data provider specific parameter name.</returns>
+	Protected MustOverride Function CreateCollectionParameterName(baseParamName As String) As String
+
+	''' <summary>
+	''' Gets <see cref="System.Data.IDbConnection"/> associated with this object.
+	''' </summary>
+	''' <value>A reference to the <see cref="System.Data.IDbConnection"/> object.</value>
+	Public ReadOnly Property Connection As IDbConnection
+		Get
+			Return _connection
+		End Get
+	End Property
+
+<#	foreach(ITable table in Database.Tables)
+	{ ##>
+	''' <summary>
+	''' Gets an object that represents the <c><#= table.Name #></c> <#= table.View ? "view": "table" #>.
+	''' </summary>
+	''' <value>A reference to the <see cref="<#= GetTableClassName(table) #>"/> object.</value>
+	Public ReadOnly Property <#= GetTableClassName(table) #> As <#= GetTableClassName(table) #>
+		Get
+			If <#= GetTableFieldName(table) #> Is Nothing Then
+				<#= GetTableFieldName(table) #> = new <#= GetTableClassName(table) #>(CType(Me, <#= Database.CodeName #>))
+			End If
+			Return <#= GetTableFieldName(table) #>
+		End Get
+	End Property
+
+<#	} ##>
+<#	if(SharedUtils.GenerateStoredProcedureWrapper(Database))
+	{ ##>
+	''' <summary>
+	''' Gets an object that wraps the database stored procedures.
+	''' </summary>
+	''' <value>A reference to the <see cref="StoredProcedures"/> object.</value>
+	Public ReadOnly Property StoredProcedures As StoredProcedures
+		Get
+			If _storedProcedures Is Nothing Then
+				_storedProcedures = new StoredProcedures(CType(Me, <#= Database.CodeName #>))
+			End If
+			return _storedProcedures
+		End Get
+	End Property
+
+<#	} ##>
+	''' <summary>
+	''' Begins a new database transaction.
+	''' </summary>
+	''' <seealso cref="CommitTransaction"/>
+	''' <seealso cref="RollbackTransaction"/>
+	''' <returns>An object representing the new transaction.</returns>
+	Public Function BeginTransaction() As IDbTransaction
+		CheckTransactionState(false)
+		_transaction = _connection.BeginTransaction()
+		Return _transaction
+	End Function
+
+	''' <summary>
+	''' Begins a new database transaction with the specified 
+	''' transaction isolation level.
+	''' <seealso cref="CommitTransaction"/>
+	''' <seealso cref="RollbackTransaction"/>
+	''' </summary>
+	''' <param name="isolationLevel">The transaction isolation level.</param>
+	''' <returns>An object representing the new transaction.</returns>
+	Public Function BeginTransaction(isolationLevel As IsolationLevel) As IDbTransaction
+		CheckTransactionState(false)
+		_transaction = _connection.BeginTransaction(isolationLevel)
+		Return _transaction
+	End Function
+
+	''' <summary>
+	''' Commits the current database transaction.
+	''' <seealso cref="BeginTransaction"/>
+	''' <seealso cref="RollbackTransaction"/>
+	''' </summary>
+	Public Sub CommitTransaction()
+		CheckTransactionState(true)
+		_transaction.Commit()
+		_transaction = Nothing
+	End Sub
+
+	''' <summary>
+	''' Rolls back the current transaction from a pending state.
+	''' <seealso cref="BeginTransaction"/>
+	''' <seealso cref="CommitTransaction"/>
+	''' </summary>
+	Public Sub RollbackTransaction()
+		CheckTransactionState(true)
+		_transaction.Rollback()
+		_transaction = Nothing
+	End Sub
+
+	' Checks the state of the current transaction
+	Private Sub CheckTransactionState(mustBeOpen As Boolean)
+		If mustBeOpen Then
+			If _transaction Is Nothing Then
+				Throw New InvalidOperationException("Transaction is not open.")
+			End If
+		Else
+			If Not (_transaction Is Nothing) Then
+				Throw New InvalidOperationException("Transaction is already open.")
+			End If
+		End If
+	End Sub
+
+	''' <summary>
+	''' Creates and returns a new <see cref="System.Data.IDbCommand"/> object.
+	''' </summary>
+	''' <param name="sqlText">The text of the query.</param>
+	''' <returns>An <see cref="System.Data.IDbCommand"/> object.</returns>
+	Friend Function CreateCommand(sqlText As String) As IDbCommand
+		Return CreateCommand(sqlText, false)
+	End Function
+
+	''' <summary>
+	''' Creates and returns a new <see cref="System.Data.IDbCommand"/> object.
+	''' </summary>
+	''' <param name="sqlText">The text of the query.</param>
+	''' <param name="procedure">Specifies whether the sqlText parameter is 
+	''' the name of a stored procedure.</param>
+	''' <returns>An <see cref="System.Data.IDbCommand"/> object.</returns>
+	Friend Function CreateCommand(sqlText As String, procedure As Boolean) As IDbCommand
+		Dim cmd As IDbCommand = _connection.CreateCommand()
+		cmd.CommandText = sqlText
+		cmd.Transaction = _transaction
+		If procedure Then
+			cmd.CommandType = CommandType.StoredProcedure
+		End If
+		Return cmd
+	End Function
+
+	''' <summary>
+	''' Rolls back any pending transactions and closes the DB connection.
+	''' An application can call the <c>Close</c> method more than
+	''' one time without generating an exception.
+	''' </summary>
+	Public Overridable Sub Close()
+		If Not _connection Is Nothing Then
+			_connection.Close()
+		End If
+	End Sub
+
+	''' <summary>
+	''' Rolls back any pending transactions and closes the DB connection.
+	''' </summary>
+	Public Overridable Sub Dispose() Implements IDisposable.Dispose
+		Close()
+		If Not _connection Is Nothing Then
+			_connection.Dispose()
+		End If
+	End Sub
+End Class
+<#	if(0 < RelativeNamespace.Length)
+	{ ##>
+End Namespace
+<#	} ##>
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return SharedUtils.GetBaseClassRelativePath(GetClassName() + ".vb"); }
+	}
+
+	private string GetClassName()
+	{
+		return Database.CodeName + "_Base";
+	}
+
+	private string GetUserClassName()
+	{
+		return Database.CodeName;
+	}
+	
+	private string GetTableClassName(ITable table)
+	{
+		return SharedUtils.GetGatewayClassName(table);
+	}
+	
+	private string GetTableFieldName(ITable table)
+	{
+		return SharedUtils.GetFieldName(table.CodeName);
+	}
+
+	private string RelativeNamespace
+	{
+		get { return SharedUtils.BaseClassSubDirectory; }
+	}
+
+	private string GetNamespace()
+	{
+		return SharedUtils.GetDbTierBaseNamespace(Database);
+	}
+##>

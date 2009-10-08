@@ -1,0 +1,378 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+' <fileinfo name="<#= RelativeFilePath #>">
+'		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "'			"); ##>
+'		</copyright>
+'		<remarks>
+'			You can update this source code manually. If the file
+'			already exists it will not be rewritten by the generator.
+'		</remarks>
+'		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+' </fileinfo>
+
+Option Strict Off
+Option Explicit On
+
+Imports System
+Imports System.ComponentModel
+Imports System.Data
+Imports System.Windows.Forms
+
+''' <summary>
+''' 
+''' </summary>
+Public Class DbNavigator
+			Inherits System.Windows.Forms.UserControl
+	Private _dataSource As Object
+	Private _dataMember As String
+
+#Region " Windows Form Designer generated code "
+    Public Sub New()
+        MyBase.New()
+
+        ' This call is required by the Windows Form Designer.
+        InitializeComponent()
+
+    End Sub
+
+    ' UserControl overrides dispose to clean up the component list.
+    Protected Overloads Overrides Sub Dispose(ByVal disposing As Boolean)
+        If disposing Then
+            If Not (components Is Nothing) Then
+                components.Dispose()
+            End If
+        End If
+        MyBase.Dispose(disposing)
+    End Sub
+
+    ' Required by the Windows Form Designer
+    Private components As System.ComponentModel.IContainer
+
+    ' NOTE: The following procedure is required by the Windows Form Designer
+    ' It can be modified using the Windows Form Designer.  
+    ' Do not modify it using the code editor.
+	Friend _moveFirstButton As System.Windows.Forms.ToolBarButton
+	Friend _movePreviousButton As System.Windows.Forms.ToolBarButton
+	Friend _newButton As System.Windows.Forms.ToolBarButton
+	Friend _deleteButton As System.Windows.Forms.ToolBarButton
+	Friend _okButton As System.Windows.Forms.ToolBarButton
+	Friend _cancelButton As System.Windows.Forms.ToolBarButton
+	Friend _moveNextButton As System.Windows.Forms.ToolBarButton
+	Friend _moveLastButton As System.Windows.Forms.ToolBarButton
+	Friend _recordLabel As System.Windows.Forms.Label
+	Friend _navigatorImageList As System.Windows.Forms.ImageList
+	Friend WithEvents _leftToolBar As System.Windows.Forms.ToolBar
+	Friend WithEvents _rightToolBar As System.Windows.Forms.ToolBar
+    <System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
+		Me.components = new System.ComponentModel.Container()
+		Dim resources As System.Resources.ResourceManager = New System.Resources.ResourceManager(GetType(DbNavigator))
+		Me._leftToolBar = new System.Windows.Forms.ToolBar()
+		Me._moveFirstButton = new System.Windows.Forms.ToolBarButton()
+		Me._movePreviousButton = new System.Windows.Forms.ToolBarButton()
+		Me._newButton = new System.Windows.Forms.ToolBarButton()
+		Me._deleteButton = new System.Windows.Forms.ToolBarButton()
+		Me._navigatorImageList = new System.Windows.Forms.ImageList(Me.components)
+		Me._rightToolBar = new System.Windows.Forms.ToolBar()
+		Me._okButton = new System.Windows.Forms.ToolBarButton()
+		Me._cancelButton = new System.Windows.Forms.ToolBarButton()
+		Me._moveNextButton = new System.Windows.Forms.ToolBarButton()
+		Me._moveLastButton = new System.Windows.Forms.ToolBarButton()
+		Me._recordLabel = new System.Windows.Forms.Label()
+		Me.SuspendLayout()
+		' 
+		' _leftToolBar
+		' 
+		Me._leftToolBar.AutoSize = false
+		Me._leftToolBar.Buttons.AddRange(new System.Windows.Forms.ToolBarButton() { _
+														Me._moveFirstButton, _
+														Me._movePreviousButton, _
+														Me._newButton, _
+														Me._deleteButton})
+		Me._leftToolBar.Divider = false
+		Me._leftToolBar.Dock = System.Windows.Forms.DockStyle.Left
+		Me._leftToolBar.ImageList = Me._navigatorImageList
+		Me._leftToolBar.Name = "_leftToolBar"
+		Me._leftToolBar.ShowToolTips = true
+		Me._leftToolBar.Size = new System.Drawing.Size(96, 24)
+		Me._leftToolBar.TabIndex = 0
+		Me._leftToolBar.Wrappable = false
+		' 
+		' _moveFirstButton
+		' 
+		Me._moveFirstButton.ImageIndex = 0
+		Me._moveFirstButton.ToolTipText = "Move to First"
+		' 
+		' _movePreviousButton
+		' 
+		Me._movePreviousButton.ImageIndex = 1
+		Me._movePreviousButton.ToolTipText = "Move to Previous"
+		' 
+		' _newButton
+		' 
+		Me._newButton.ImageIndex = 2
+		Me._newButton.ToolTipText = "New Record"
+		' 
+		' _deleteButton
+		' 
+		Me._deleteButton.ImageIndex = 3
+		Me._deleteButton.ToolTipText = "Delete Current Record"
+		' 
+		' _navigatorImageList
+		' 
+		Me._navigatorImageList.ColorDepth = System.Windows.Forms.ColorDepth.Depth8Bit
+		Me._navigatorImageList.ImageSize = new System.Drawing.Size(16, 16)
+		Me._navigatorImageList.ImageStream = CType(resources.GetObject("_navigatorImageList.ImageStream"), System.Windows.Forms.ImageListStreamer)
+		Me._navigatorImageList.TransparentColor = System.Drawing.Color.Transparent
+		' 
+		' _rightToolBar
+		' 
+		Me._rightToolBar.AutoSize = false
+		Me._rightToolBar.Buttons.AddRange(new System.Windows.Forms.ToolBarButton() { _
+															Me._okButton, _
+															Me._cancelButton, _
+															Me._moveNextButton, _
+															Me._moveLastButton})
+		Me._rightToolBar.Divider = false
+		Me._rightToolBar.Dock = System.Windows.Forms.DockStyle.Right
+		Me._rightToolBar.ImageList = Me._navigatorImageList
+		Me._rightToolBar.Location = new System.Drawing.Point(216, 0)
+		Me._rightToolBar.Name = "_rightToolBar"
+		Me._rightToolBar.ShowToolTips = true
+		Me._rightToolBar.Size = new System.Drawing.Size(96, 24)
+		Me._rightToolBar.TabIndex = 1
+		Me._rightToolBar.Wrappable = false
+		' 
+		' _okButton
+		' 
+		Me._okButton.ImageIndex = 4
+		Me._okButton.ToolTipText = "End Current Edit"
+		' 
+		' _cancelButton
+		' 
+		Me._cancelButton.ImageIndex = 5
+		Me._cancelButton.ToolTipText = "Cancel Current Edit"
+		' 
+		' _moveNextButton
+		' 
+		Me._moveNextButton.ImageIndex = 6
+		Me._moveNextButton.ToolTipText = "Move to Next"
+		' 
+		' _moveLastButton
+		' 
+		Me._moveLastButton.ImageIndex = 7
+		Me._moveLastButton.ToolTipText = "Move to Last"
+		' 
+		' _recordLabel
+		' 
+		Me._recordLabel.Dock = System.Windows.Forms.DockStyle.Fill
+		Me._recordLabel.Location = new System.Drawing.Point(96, 0)
+		Me._recordLabel.Name = "_recordLabel"
+		Me._recordLabel.Size = new System.Drawing.Size(120, 24)
+		Me._recordLabel.TabIndex = 2
+		Me._recordLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
+		' 
+		' DbNavigator
+		' 
+		Me.Controls.AddRange(new System.Windows.Forms.Control() { _
+													Me._recordLabel, _
+													Me._rightToolBar, _
+													Me._leftToolBar})
+		Me.Name = "DbNavigator"
+		Me.Size = new System.Drawing.Size(312, 24)
+		Me.ResumeLayout(false)
+	End Sub
+#End Region
+
+	''' <summary>
+	''' Gets or sets a value indicating whether the navigator 
+	''' displays a ToolTip for each button.
+	''' </summary>
+	''' <value>true if the navigator displays a ToolTip for each button;
+	''' otherwise, false. The default is true.</value>
+	<DefaultValue(true), Category("Behavior"), _
+		Description("Indicates whether tool tips will be shown.")> _
+	Public Property ShowToolTips() As Boolean
+		Get
+			Return _leftToolBar.ShowToolTips
+		End Get
+		Set(ByVal Value As Boolean)
+			_leftToolBar.ShowToolTips = Value
+			_rightToolBar.ShowToolTips = Value
+		End Set
+	End Property
+
+	''' <summary>
+	''' Indicates whether the New, Delete, OK, and Cancel butons are visible.
+	''' </summary>
+	''' <value>true if the New, Delete, OK, and Cancel butons are visible;
+	''' otherwise, false. The default is true.</value>
+	<DefaultValue(true), Category("Behavior"), _
+		Description("Indicates whether the New, Delete, OK, and Cancel butons are visible.")> _
+	Public Property ShowEditButtons() As Boolean
+		Get
+			Return _newButton.Visible
+		End Get
+		Set(ByVal Value As Boolean)
+			_newButton.Visible = Value
+			_deleteButton.Visible = Value
+			_okButton.Visible = Value
+			_cancelButton.Visible = Value
+
+            Dim toolBarWidth As Integer
+            If Value Then
+                toolBarWidth = 96
+            Else
+                toolBarWidth = 48
+            End If
+			_leftToolBar.Width = toolBarWidth
+			_rightToolBar.Width = toolBarWidth
+		End Set
+	End Property
+
+	''' <summary>
+	''' Sets DataSource and DataMember.
+	''' </summary>
+	''' <param name="dataSource">The data source.</param>
+	''' <param name="dataMember">The DataMember string that specifies the
+	''' table to bind to within the DataSource object.</param>
+	Public Sub SetDataBinding(dataSource As Object, dataMember As String)
+		Dim bindMan As BindingManagerBase = GetBindingManager()
+		If Not(bindMan Is Nothing) Then
+            RemoveHandler bindMan.PositionChanged, AddressOf OnBindigContextPositionChanged
+		End If
+
+		_dataSource = dataSource
+        If dataMember Is Nothing Then
+            _dataMember = ""
+        Else
+            _dataMember = dataMember
+        End If
+
+		bindMan = GetBindingManager()
+		If Not(bindMan Is Nothing) Then
+            AddHandler bindMan.PositionChanged, AddressOf OnBindigContextPositionChanged
+		End If
+		UpdateControls()
+	End Sub
+
+	''' <summary>
+	''' Returns the current binding manager.
+	''' </summary>
+	''' <returns>A reference to the binding manager.</returns>
+	Private Function GetBindingManager() As BindingManagerBase
+		If Not (_dataSource Is Nothing Or BindingContext Is Nothing) Then
+			Return BindingContext(_dataSource, _dataMember)
+		End If
+		Return Nothing
+	End Function
+
+	Private Sub OnBindigContextPositionChanged(sender As Object, e As System.EventArgs)
+		UpdateControls()
+	End Sub
+
+	Private Sub OnButtonClick(sender As Object, e As System.Windows.Forms.ToolBarButtonClickEventArgs) Handles _leftToolBar.ButtonClick, _rightToolBar.ButtonClick
+		Dim bindMan As BindingManagerBase = GetBindingManager()
+
+		If _cancelButton Is e.Button Then
+			bindMan.CancelCurrentEdit()
+		ElseIf _deleteButton Is e.Button Then
+			bindMan.RemoveAt(bindMan.Position)
+		Else
+			Try
+				Focus()
+				bindMan.EndCurrentEdit()
+			Catch ex As Exception
+				Dim msg As String = ex.Message + " Do you want to correct value?"
+				If DialogResult.Yes <> MessageBox.Show(msg, _
+						"Error when commiting the row to the original data store.", MessageBoxButtons.YesNo) Then
+					bindMan.CancelCurrentEdit()
+					If _moveFirstButton Is e.Button Then
+						bindMan.Position = 0
+					End If
+				End If
+				Return
+			End Try
+
+			If _newButton Is e.Button Then
+				bindMan.AddNew()
+			ElseIf _moveFirstButton Is e.Button Then
+				bindMan.Position = 0
+			ElseIf _movePreviousButton Is e.Button Then
+				bindMan.Position -= 1
+			ElseIf _moveNextButton Is e.Button Then
+				bindMan.Position += 1
+			ElseIf _moveLastButton Is e.Button Then
+				bindMan.Position = bindMan.Count - 1
+			End If
+		End If
+		UpdateControls()
+	End Sub
+
+	Private Sub UpdateControls()
+		Dim bindMan As BindingManagerBase = GetBindingManager()
+
+		If bindMan Is Nothing OrElse 0 = bindMan.Count Then
+			_moveFirstButton.Enabled = False
+			_movePreviousButton.Enabled = False
+			_moveLastButton.Enabled = False
+			_moveNextButton.Enabled = False
+			_deleteButton.Enabled = False
+			_cancelButton.Enabled = False
+			_okButton.Enabled = False
+			_newButton.Enabled = Not(bindMan Is Nothing)
+			_recordLabel.Text = ""
+		Else
+            Dim row As DataRowView
+            If TypeOf(bindMan.Current) Is DataRowView Then
+                row = bindMan.Current
+                _newButton.Enabled = Not(row.IsNew)
+            Else
+                _newButton.Enabled = True
+                _cancelButton.Enabled = True
+                _okButton.Enabled = True
+            End If
+
+			_moveFirstButton.Enabled = 0 < bindMan.Position
+			_movePreviousButton.Enabled = _moveFirstButton.Enabled
+			_moveLastButton.Enabled = bindMan.Position < bindMan.Count - 1
+			_moveNextButton.Enabled = _moveLastButton.Enabled
+			_deleteButton.Enabled = True
+			_recordLabel.Text = string.Format("{0} of {1}", bindMan.Position + 1, bindMan.Count)
+		End If
+	End Sub
+End Class
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.Text;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return "DbNavigator.vb"; }
+	}
+
+	private string GetWinUITierNamespace()
+	{
+		return SharedUtils.GetWinUITierNamespace(Database);
+	}
+##>

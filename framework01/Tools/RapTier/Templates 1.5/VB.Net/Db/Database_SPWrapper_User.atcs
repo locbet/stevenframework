@@ -1,0 +1,93 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+' <fileinfo name="<#= RelativeFilePath #>">
+'		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "'			"); ##>
+'		</copyright>
+'		<remarks>
+'			You can update this source code manually. If the file
+'			already exists it will not be rewritten by the generator.
+'		</remarks>
+'		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+' </fileinfo>
+
+Option Strict Off
+Option Explicit On
+
+Imports System
+<#	if(GetNamespace() != SharedUtils.GetDbTierBaseNamespace(Database))
+	{ ##>
+Imports <#= SharedUtils.GetDbTierBaseNamespace(Database) #>
+<#	} ##>
+
+<#	if(0 < RelativeNamespace.Length)
+	{ ##>
+Namespace <#= RelativeNamespace #>
+<#	} ##>
+''' <summary>
+''' 
+''' </summary>
+Public Class StoredProcedures 
+		Inherits StoredProcedures_Base
+	''' <summary>
+	''' Initializes a new instance of the <see cref="StoredProcedures"/> 
+	''' class with the specified <see cref="<#= GetDbClassName() #>"/>.
+	''' </summary>
+	''' <param name="db">The <see cref="<#= GetDbClassName() #>"/> object.</param>
+	Friend Sub New(db As <#= GetDbClassName() #>)
+		MyBase.New(db)
+		' EMPTY
+	End Sub
+End Class
+<#	if(0 < RelativeNamespace.Length)
+	{ ##>
+End Namespace
+<#	} ##>
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return "StoredProcedures.vb"; }
+	}
+
+	public override bool Enabled
+	{
+		get { return SharedUtils.GenerateStoredProcedureWrapper(Database); }
+	}
+
+	private string GetDbClassName()
+	{
+		return Database.CodeName;
+	}
+
+	private string RelativeNamespace
+	{
+		get { return SharedUtils.UserClassSubDirectory; }
+	}
+	
+	private string GetNamespace()
+	{
+		return SharedUtils.GetDbTierUserNamespace(Database);
+	}
+##>

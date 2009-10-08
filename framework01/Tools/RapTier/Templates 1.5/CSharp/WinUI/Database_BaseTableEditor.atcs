@@ -1,0 +1,173 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+// <fileinfo name="<#= RelativeFilePath #>">
+//		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "//			"); ##>
+//		</copyright>
+//		<remarks>
+//			You can update this source code manually. If the file
+//			already exists it will not be rewritten by the generator.
+//		</remarks>
+//		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+// </fileinfo>
+
+using System;
+using System.Collections;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Windows.Forms;
+
+namespace <#= GetWinUITierNamespace() #>
+{
+	/// <summary>
+	/// Summary description for BaseDataTableEditor.
+	/// </summary>
+	public class BaseDataTableEditor : System.Windows.Forms.UserControl
+	{
+		/// <summary>
+		/// Creates a new instance of the <see cref="BaseDataTableEditor"/> class.
+		/// </summary>
+		public BaseDataTableEditor()
+		{
+			// This call is required by the Windows.Forms Form Designer.
+			InitializeComponent();
+
+			// TODO: Add any initialization after the InitForm call
+		}
+
+		/// <summary> 
+		/// Clean up any resources being used.
+		/// </summary>
+		protected override void Dispose( bool disposing )
+		{
+			if( disposing )
+			{
+				if(components != null)
+				{
+					components.Dispose();
+				}
+			}
+			base.Dispose( disposing );
+		}
+
+		#region Component Designer generated code
+		private System.ComponentModel.Container components = null;
+		/// <summary> 
+		/// Required method for Designer support - do not modify 
+		/// the contents of this method with the code editor.
+		/// </summary>
+		private void InitializeComponent()
+		{
+			this.Size = new System.Drawing.Size(464, 384);
+		}
+		#endregion
+
+		/// <summary>
+		/// Activates the table editor control.
+		/// </summary>
+		public virtual void Activate()
+		{
+			using(<#= GetFullDbClassName() #> db = new <#= GetFullDbClassName() #>())
+			{
+				LoadData(db);
+			}
+		}
+
+		/// <summary>
+		/// Deactivates the table editor control.
+		/// </summary>
+		public virtual void Deactivate()
+		{
+			EndCurrentEdit();
+			if(Changed)
+			{
+				using(<#= GetFullDbClassName() #> db = new <#= GetFullDbClassName() #>())
+				{
+					SaveData(db);
+				}
+			}
+		}
+
+		/// <summary>
+		/// Loads data using the specified <#= GetFullDbClassName() #> object.
+		/// </summary>
+		/// <param name="db">The <#= GetFullDbClassName() #> object that is used to load data.</param>
+		protected virtual void LoadData(<#= GetFullDbClassName() #> db)
+		{
+			throw new NotImplementedException();
+		}
+
+		/// <summary>
+		/// Saves data using the specified <#= GetFullDbClassName() #> object.
+		/// </summary>
+		/// <param name="db">The <#= GetFullDbClassName() #> object that is used to save changes.</param>
+		protected virtual void SaveData(<#= GetFullDbClassName() #> db)
+		{
+			throw new NotImplementedException();
+		}
+		
+		/// <summary>
+		/// Gets true if the table data were changed; otherwise, false.
+		/// </summary>
+		/// <value>true if the table data were changed; otherwise, false.</value>
+		protected virtual bool Changed
+		{
+			get { return false; }
+		}
+		
+		/// <summary>
+		/// Cancels the current edit operation.
+		/// </summary>
+		protected virtual void CancelCurrentEdit()
+		{
+			// EMPTY
+		}
+		
+		/// <summary> 
+		/// Ends the current edit operation.
+		/// </summary>
+		protected virtual void EndCurrentEdit()
+		{
+			// EMPTY
+		}
+	}
+}
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return "BaseDataTableEditor.cs"; }
+	}
+
+	private string GetWinUITierNamespace()
+	{
+		return SharedUtils.GetWinUITierNamespace(Database);
+	}
+	
+	private string GetFullDbClassName()
+	{
+		return SharedUtils.GetDbTierUserNamespace(Database) + "." + Database.CodeName;
+	}
+##>

@@ -1,0 +1,203 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+' <fileinfo name="<#= RelativeFilePath #>">
+'		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "'			"); ##>
+'		</copyright>
+'		<remarks>
+'			You can update this source code manually. If the file
+'			already exists it will not be rewritten by the generator.
+'		</remarks>
+'		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+' </fileinfo>
+
+Option Strict Off
+Option Explicit On
+
+Imports System
+Imports System.Windows.Forms
+
+Namespace Editors
+	''' <summary>
+	''' This control is used to display and edit properties 
+	''' of <#= GetTableRowClassName(Table) #> objects.
+	''' </summary>
+	Public Class <#= GetRowEditorClassName(Table) #>
+			Inherits System.Windows.Forms.UserControl
+		Private _dataSource As Object
+#Region " Windows Form Designer generated code "
+	
+		''' <summary>
+		''' Creates a new instance of <#= GetRowEditorClassName(Table) #>.
+		''' </summary>
+		Public Sub New()
+			MyBase.New()
+
+			' This call is required by the Windows Form Designer.
+			InitializeComponent()
+
+			' Add any initialization after the InitializeComponent() call
+		End Sub
+	
+		''' <summary> 
+		''' Clean up any resources being used.
+		''' </summary>
+		Protected Overloads Overrides Sub Dispose(ByVal disposing As Boolean)
+			If disposing Then
+				If Not (components Is Nothing) Then
+					components.Dispose()
+				End If
+			End If
+			MyBase.Dispose(disposing)
+		End Sub
+
+		' Required by the Windows Form Designer
+		Private components As System.ComponentModel.IContainer
+
+		' NOTE: The following procedure is required by the Windows Form Designer
+		' It can be modified using the Windows Form Designer.  
+		' Do not modify it using the code editor.
+<#		foreach(IColumn column in Table.Columns)
+		{ ##>
+		Friend WithEvents _lbl<#= column.CodeName #> As System.Windows.Forms.Label
+		Friend WithEvents _txt<#= column.CodeName #> As System.Windows.Forms.TextBox
+<#		} ##>
+	    <System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
+<#		foreach(IColumn column in Table.Columns)
+		{ ##>
+			Me._lbl<#= column.CodeName #> = New System.Windows.Forms.Label()
+			Me._txt<#= column.CodeName #> = New System.Windows.Forms.TextBox()
+<#		} ##>
+			Me.SuspendLayout()
+		
+<#		int tabIndex = 0;
+		foreach(IColumn column in Table.Columns)
+		{ ##>
+			'
+			' _lbl<#= column.CodeName #>
+			'
+			Me._lbl<#= column.CodeName #>.Text = "<#= column.DisplayName #>"
+			Me._lbl<#= column.CodeName #>.TabIndex = <#= tabIndex #>
+			Me._lbl<#= column.CodeName #>.Location = new System.Drawing.Point(0, <#= tabIndex * 24 + 8 #>)
+			Me._lbl<#= column.CodeName #>.Size = new System.Drawing.Size(150, 23)
+
+			'
+			' _txt<#= column.CodeName #>
+			'
+			Me._txt<#= column.CodeName #>.TabIndex = <#= tabIndex #>
+			Me._txt<#= column.CodeName #>.ReadOnly = <#= (column.ReadOnly || Table.View) ? "True" : "False" #>
+			Me._txt<#= column.CodeName #>.Location = new System.Drawing.Point(160, <#= tabIndex * 24 + 8 #>)
+<#			if(0 < column.Length && int.MaxValue > column.Length &&
+					SharedUtils.GetDotNetType(column, false) == typeof(string))
+			{ ##>
+			Me._txt<#= column.CodeName #>.MaxLength = <#= column.Length #>
+<#			} ##>
+			Me._txt<#= column.CodeName #>.Size = new System.Drawing.Size(232, 20)
+			Me._txt<#= column.CodeName #>.Anchor = ((System.Windows.Forms.AnchorStyles.Top _
+					Or System.Windows.Forms.AnchorStyles.Left) Or System.Windows.Forms.AnchorStyles.Right)
+
+<#			tabIndex++;
+		} ##>
+		
+			Me.Name = "<#= GetRowEditorClassName(Table) #>"
+			Me.Size = new System.Drawing.Size(400, 300)
+			Me.AutoScroll = true
+			Me.Controls.AddRange(new System.Windows.Forms.Control() { _
+<#		for(int i = 0; i < Table.Columns.Count; i++)
+		{ ##>
+					Me._lbl<#= Table.Columns[i].CodeName #>, _
+					Me._txt<#= Table.Columns[i].CodeName #><#= i < Table.Columns.Count - 1 ? "," : "" #> _
+<#		} ##> })
+		
+	        Me.ResumeLayout(False)
+		End Sub
+
+#End Region
+
+		''' <summary>
+		''' Sets the data source.
+		''' </summary>
+		''' <param name="dataSource">The data source.</param>
+		Public Sub SetDataBinding(dataSource As Object)
+            If Not Object.Equals(dataSource, _dataSource) Then
+				_dataSource = dataSource
+
+<#				foreach(IColumn column in Table.Columns)
+				{ ##>
+				_txt<#= column.CodeName #>.DataBindings.Clear()
+<#				} ##>
+
+				If Not (dataSource Is Nothing) Then
+<#				foreach(IColumn column in Table.Columns)
+				{ ##>
+					_txt<#= column.CodeName #>.DataBindings.Add("Text", dataSource, "<#= Table.CodeName #>.<#= column.CodeName #>")
+<#				} ##>
+				End If
+			End If
+		End Sub
+	End Class
+End Namespace
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private ITable Table
+	{
+		get { return (ITable)Environment["Table"]; }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return GetRowEditorClassName(Table) + ".vb"; }
+	}
+
+	private string GetRowEditorClassName(ITable table)
+	{
+		return table.CodeName + "RowEditor";
+	}
+	
+	private string GetTableRowClassName(ITable table)
+	{
+		return table.CodeName + "Row";
+	}
+	
+	private string GetDotNetTypeName(IColumn column)
+	{
+		return SharedUtils.GetCSharpTypeName(SharedUtils.GetDotNetType(column, false));
+	}
+	
+	private string GetParameterName(IColumn column)
+	{
+		return Char.ToLower(column.CodeName[0]) + column.CodeName.Substring(1);
+	}
+	
+	private string GetWinUITierNamespace()
+	{
+		return SharedUtils.GetWinUITierNamespace(Table.Database);
+	}
+	
+	private string GetChildRelationName(IRelation relation)
+	{
+		return relation.ChildColumns[0].Table.CodeName;
+	}
+	
+	private string GetFullDbClassName()
+	{
+		return SharedUtils.GetDbTierUserNamespace(Table.Database) 
+					+ "." + Table.Database.CodeName;
+	}
+##>

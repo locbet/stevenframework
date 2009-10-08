@@ -1,0 +1,45 @@
+BODY {
+	FONT-SIZE: 80%; BACKGROUND: #ffffff; COLOR: #000000; FONT-FAMILY: Arial; text-align:justify
+}
+TD {
+	FONT-SIZE: 75%; font-family: "Helvetica, Arial"; color: #444444 
+}
+a:link, a:visited { text-decoration:none; }
+a:hover { color: #cc0000; }
+
+CODE {
+	COLOR: #404040
+}
+H1 {
+	FONT-SIZE: 150%
+}
+H2 {
+	FONT-SIZE: 140%
+}
+H3 {
+	FONT-SIZE: 120%
+}
+H4 {
+	FONT-SIZE: 100%
+}
+.dgHeader {
+	BACKGROUND: #aec2dd; color:#cc0000; font-weight:bold; text-align:center;
+}
+.dgItem {
+	BACKGROUND: #ffffff
+}
+.dgAltItem {
+	BACKGROUND: #f0f1f3
+}
+.dgSelItem {
+	
+}
+.dgEditItem {
+	
+}
+.dgFooter {
+	BACKGROUND: #ffffff
+}
+.dgPager {
+	BACKGROUND: #ffffff
+}

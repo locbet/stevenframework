@@ -1,0 +1,318 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+' <fileinfo name="<#= RelativeFilePath #>">
+'		<copyright>
+<# SharedUtils.WriteMultiLine(Writer, SharedUtils.CopyrightText, "'			"); ##>
+'		</copyright>
+'		<remarks>
+'			You can update this source code manually. If the file
+'			already exists it will not be rewritten by the generator.
+'		</remarks>
+'		<generator rewritefile="<#= RewriteExistingFile #>" infourl="http://www.SharpPower.com">RapTier</generator>
+' </fileinfo>
+
+Option Strict Off
+Option Explicit On
+
+Imports System
+Imports System.Data
+Imports System.Windows.Forms
+
+Namespace Editors
+	''' <summary>
+	''' This control is used to display and edit content of the '<#= Table.Name #>' table.
+	''' </summary>
+	Public Class <#= GetTableEditorClassName(Table) #>
+			Inherits <#= GetWinUITierNamespace() #>.BaseDataTableEditor
+		private _dataSet As DataSet
+		
+#Region " Windows Form Designer generated code "
+
+		''' <summary>
+		''' Creates a new instance of <#= GetTableEditorClassName(Table) #>.
+		''' </summary>
+		Public Sub New()
+			MyBase.New()
+
+			' This call is required by the Windows Form Designer.
+			InitializeComponent()
+
+			' Add any initialization after the InitializeComponent() call
+		End Sub
+
+		''' <summary> 
+		''' Clean up any resources being used.
+		''' </summary>
+		Protected Overloads Overrides Sub Dispose(ByVal disposing As Boolean)
+			If disposing Then
+				If Not (components Is Nothing) Then
+					components.Dispose()
+				End If
+			End If
+			MyBase.Dispose(disposing)
+		End Sub
+
+		' Required by the Windows Form Designer
+		Private components As System.ComponentModel.IContainer
+
+		' NOTE: The following procedure is required by the Windows Form Designer
+		' It can be modified using the Windows Form Designer.  
+		' Do not modify it using the code editor.
+		Friend WithEvents _navigator As <#= GetWinUITierNamespace() #>.DbNavigator
+		Friend WithEvents _splitter As System.Windows.Forms.Splitter
+		Friend WithEvents _dataGrid As System.Windows.Forms.DataGrid
+		Friend WithEvents _rowEditor As <#= GetRowEditorClassName(Table) #>
+
+		<System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
+			Me._navigator = New <#= GetWinUITierNamespace() #>.DbNavigator()
+			Me._dataGrid = new System.Windows.Forms.DataGrid()
+			Me._splitter = new System.Windows.Forms.Splitter()
+			Me._rowEditor = new <#= GetRowEditorClassName(Table) #>()
+			CType(Me._dataGrid, System.ComponentModel.ISupportInitialize).BeginInit()
+			Me.SuspendLayout()
+			'
+			' _navigator
+			'
+			Me._navigator.Dock = System.Windows.Forms.DockStyle.Top
+			Me._navigator.Name = "_navigator"
+			Me._navigator.ShowEditButtons = <#= Table.View ? "false" : "true" #>
+			Me._navigator.Size = new System.Drawing.Size(464, 24)
+			Me._navigator.TabIndex = 0
+			' 
+			' _dataGrid
+			'
+			Me._dataGrid.AllowNavigation = False
+			Me._dataGrid.CaptionVisible = False
+			Me._dataGrid.DataMember = ""
+			Me._dataGrid.Dock = System.Windows.Forms.DockStyle.Top
+			Me._dataGrid.Location = New System.Drawing.Point(0, 24)
+			Me._dataGrid.Name = "_dataGrid"
+<#			if(Table.View)
+			{ ##>
+			Me._dataGrid.ReadOnly = True
+<#			} ##>
+			Me._dataGrid.Size = new System.Drawing.Size(464, 160)
+			Me._dataGrid.TabIndex = 1
+			' 
+			' _splitter
+			' 
+			Me._splitter.Dock = System.Windows.Forms.DockStyle.Top
+			Me._splitter.Location = new System.Drawing.Point(0, 184)
+			Me._splitter.Name = "_splitter"
+			Me._splitter.Size = new System.Drawing.Size(464, 3)
+			Me._splitter.TabIndex = 2
+			Me._splitter.TabStop = false
+			' 
+			' _rowEditor
+			' 
+			Me._rowEditor.Dock = System.Windows.Forms.DockStyle.Fill
+			Me._rowEditor.Location = new System.Drawing.Point(0, 187)
+			Me._rowEditor.Name = "_rowEditor"
+			Me._rowEditor.Size = new System.Drawing.Size(464, 197)
+			Me._rowEditor.TabIndex = 3
+			' 
+			' "<#= GetTableEditorClassName(Table) #>"
+			' 
+			Me.Controls.AddRange(new System.Windows.Forms.Control() { _
+					Me._rowEditor, Me._splitter, Me._dataGrid, Me._navigator})
+			Me.Name = "<#= GetTableEditorClassName(Table) #>"
+			Me.Size = new System.Drawing.Size(464, 384)
+			CType(Me._dataGrid, System.ComponentModel.ISupportInitialize).EndInit()
+			Me.ResumeLayout(false)
+		End Sub
+#End Region
+
+		''' <summary>
+		''' Gets true if the table data were changed; otherwise, false.
+		''' </summary>
+		''' <value>true if the table data were changed; otherwise, false.</value>
+		Protected Overrides ReadOnly Property Changed As Boolean
+			Get
+				Dim table As DataTable = _dataSet.Tables("<#= Table.CodeName #>")
+				If Not (table Is Nothing) Then
+					Return Not (table.GetChanges() Is Nothing)
+				End If
+				Return False
+			End Get
+		End Property
+
+		''' <summary>
+		''' Loads data using the specified <#= GetFullDbClassName() #> object.
+		''' </summary>
+		''' <param name="db">The <#= GetFullDbClassName() #> object that is used to save data.</param>
+		Protected Overrides Sub LoadData(db As <#= GetFullDbClassName() #>)
+			_dataSet = new DataSet()
+			_dataSet.Tables.Add(db.<#= SharedUtils.GetGatewayClassName(Table) #>.GetAllAsDataTable())
+<#			ArrayList dataSetTableNames = new ArrayList();
+			dataSetTableNames.Add(Table.CodeName);
+			if(0 < Table.ParentRelations.Length)
+			{ ##>
+
+			' Lookup tables
+<#				foreach(IRelation relation in Table.ParentRelations)
+				{
+					ITable pTable = relation.ParentColumns[0].Table;
+					if(!dataSetTableNames.Contains(pTable.CodeName))
+					{
+						dataSetTableNames.Add(pTable.CodeName); ##>
+			_dataSet.Tables.Add(db.<#= SharedUtils.GetGatewayClassName(pTable) #>.GetAllAsDataTable())
+<#					} ##>
+'			_dataSet.Relations.Add("<#= relation.Name #>", _
+'				new DataColumn() {<#
+				string linePrefix = " ";
+				foreach(IColumn column in relation.ParentColumns)
+				{ 
+					Writer.Write(linePrefix);
+					##>_dataSet.Tables("<#= column.Table.CodeName #>").Columns("<#= column.CodeName #>")<#
+					linePrefix = ", _\n'								   ";
+				}#>}, _
+'				new DataColumn() {<#
+				linePrefix = " ";
+				foreach(IColumn column in relation.ChildColumns)
+				{
+					Writer.Write(linePrefix);
+					##>_dataSet.Tables("<#= column.Table.CodeName #>").Columns("<#= column.CodeName #>")<#
+					linePrefix = ", _\n'								   ";
+				}#>})
+<#				}	// End foreach(IRelation relation in Table.ParentRelations)
+			} ##>
+<#			if(0 < Table.ChildRelations.Length)
+			{ ##>
+
+			' Uncomment to support master-detail relations
+<#				foreach(IRelation relation in Table.ChildRelations)
+				{
+					ITable cTable = relation.ChildColumns[0].Table;
+					if(!dataSetTableNames.Contains(cTable.CodeName))
+					{
+						dataSetTableNames.Add(cTable.CodeName); ##>
+'			_dataSet.Tables.Add(db.<#= SharedUtils.GetGatewayClassName(cTable) #>.GetAllAsDataTable())
+<#					} ##>
+'			_dataSet.Relations.Add("<#= relation.Name #>", _
+'				new DataColumn() {<#
+				string linePrefix = " ";
+				foreach(IColumn column in relation.ParentColumns)
+				{ 
+					Writer.Write(linePrefix);
+					##>_dataSet.Tables("<#= column.Table.CodeName #>").Columns("<#= column.CodeName #>")<#
+					linePrefix = ", _\n'								   ";
+				}#>}, _
+'				new DataColumn() {<#
+				linePrefix = " ";
+				foreach(IColumn column in relation.ChildColumns)
+				{
+					Writer.Write(linePrefix);
+					##>_dataSet.Tables("<#= column.Table.CodeName #>").Columns("<#= column.CodeName #>")<#
+					linePrefix = ", _\n'								   ";
+				}#>})
+<#				}
+			} ##>
+
+			_dataGrid.SetDataBinding(_dataSet, "<#= Table.CodeName #>")
+			_navigator.SetDataBinding(_dataSet, "<#= Table.CodeName #>")
+			_rowEditor.SetDataBinding(_dataSet)
+		End Sub
+
+		''' <summary>
+		''' Saves data using the specified <#= GetFullDbClassName() #> object.
+		''' </summary>
+		''' <param name="db">The <#= GetFullDbClassName() #> object that is used to save changes.</param>
+		Protected Overrides Sub SaveData(db As <#= GetFullDbClassName() #>)
+<#		if(!Table.View && 0 < Table.Columns.GetPrimaryColumns().Length &&
+				0 < Table.Columns.GetWriteableNonPrimaryColumns().Length)
+		{ ##>
+			If Me.Changed Then
+				db.<#= SharedUtils.GetGatewayClassName(Table) #>.Update(_dataSet.Tables("<#= Table.CodeName #>"))
+			End If
+<#			}
+			else
+			{ ##>
+			' EMPTY
+<#			} ##>
+		End Sub
+		
+		''' <summary>
+		''' Cancels the current edit operation.
+		''' </summary>
+		Protected Overrides Sub CancelCurrentEdit()
+			BindingContext(_dataSet, "<#= Table.CodeName #>").CancelCurrentEdit()
+		End Sub
+		
+		''' <summary>
+		''' Ends the current edit operation.
+		''' </summary>
+		Protected Overrides Sub EndCurrentEdit()
+			BindingContext(_dataSet, "<#= Table.CodeName #>").EndCurrentEdit()
+		End Sub
+	End Class
+End Namespace
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.Collections;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private ITable Table
+	{
+		get { return (ITable)Environment["Table"]; }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return GetTableEditorClassName(Table) + ".vb"; }
+	}
+
+	private string GetTableEditorClassName(ITable table)
+	{
+		return table.CodeName + "TableEditor";
+	}
+
+	private string GetRowEditorClassName(ITable table)
+	{
+		return table.CodeName + "RowEditor";
+	}
+	
+	private string GetTableRowClassName(ITable table)
+	{
+		return table.CodeName + "Row";
+	}
+	
+	private string GetDotNetTypeName(IColumn column)
+	{
+		return SharedUtils.GetCSharpTypeName(SharedUtils.GetDotNetType(column, false));
+	}
+	
+	private string GetParameterName(IColumn column)
+	{
+		return Char.ToLower(column.CodeName[0]) + column.CodeName.Substring(1);
+	}
+	
+	private string GetWinUITierNamespace()
+	{
+		return SharedUtils.GetWinUITierNamespace(Table.Database);
+	}
+	
+	private string GetChildRelationName(IRelation relation)
+	{
+		return relation.ChildColumns[0].Table.CodeName;
+	}
+	
+	private string GetFullDbClassName()
+	{
+		return SharedUtils.GetDbTierUserNamespace(Table.Database) 
+					+ "." + Table.Database.CodeName;
+	}
+##>

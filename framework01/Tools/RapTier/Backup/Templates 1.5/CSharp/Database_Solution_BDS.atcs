@@ -1,0 +1,108 @@
+<#--
+		RapTier multi-tier Code Generator http://www.SharpPower.com
+		Copyright (c) 2002-2004 SharpPower. All rights reserved.
+--##>
+<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+  <PersonalityInfo>
+    <Option>
+      <Option Name="Personality" Type="String">Default.Personality</Option>
+      <Option Name="ProjectType" Type="String"></Option>
+      <Option Name="Version" Type="String">1.0</Option>
+      <Option Name="GUID" Type="String"><#= Guid.NewGuid().ToString("B").ToUpper() #></Option>
+    </Option>
+  </PersonalityInfo>
+  <Default.Personality>
+    <Projects>
+      <Projects Name="Db.dll" Type="String">Db\Db.bdsproj</Projects>
+<#	string targets = "Db.dll";
+	if(GenerateWinUI)
+	{ 
+		targets += " WinUI.exe"; ##>
+      <Projects Name="WinUI.exe" Type="String">WinUI\WinUI.bdsproj</Projects>
+<#	} ##>
+      <Projects Name="Targets" Type="String"><#= targets #></Projects>
+    </Projects>
+    <Dependencies>
+<#	if(GenerateWinUI)
+	{ ##>
+      <Dependency GUID="<#= GetWinUIProjectId() #>">
+        <Dependency GUID="<#= GetDbProjectId() #>"/>
+      </Dependency>
+<#	} ##>
+    </Dependencies>
+  </Default.Personality>
+</BorlandProject>
+<#--
+
+The code below imports namespaces and declares methods and properties that are 
+used by the template only. This code will not be copied into the output file.
+
+--##>
+<#@ Imports
+using System;
+using System.Text;
+using SharpPower.DbDom;
+##>
+<#@ InstanceMembers
+	private IDatabase Database
+	{
+		get { return (IDatabase)Environment["Database"]; }
+	}
+
+	public override bool Enabled
+	{
+		get { return TargetIDE.StartsWith("BDS"); }
+	}
+
+	public override bool RewriteExistingFile
+	{
+		get { return false; }
+	}
+
+	public override string RelativeFilePath
+	{
+		get { return Database.CodeName + ".bdsgroup"; }
+	}
+	
+	private bool GenerateWinUI
+	{
+		get { return SharedUtils.GetGenerateWinUI(Database); }
+	}
+
+	private bool GenerateWebUI
+	{
+		get { return SharedUtils.GetGenerateWebUI(Database); }
+	}
+
+	private string GetProjectId(string key)
+	{
+		string value = (string)Environment.Session[key];
+		if(null == value)
+		{
+			value = Guid.NewGuid().ToString("B").ToUpper();
+			Environment.Session[key] = value;
+		}
+		return value;
+	}
+
+	private string GetDbProjectId()
+	{
+		return GetProjectId("DbProjectId");
+	}
+
+	private string GetWebUIProjectId()
+	{
+		return GetProjectId("WebUIProjectId");
+	}
+	
+	private string GetWinUIProjectId()
+	{
+		return GetProjectId("WinUIProjectId");
+	}
+	
+	private string TargetIDE
+	{
+		get { return Database.ExtendedProperties["TargetIDE"]; }
+	}
+##>
