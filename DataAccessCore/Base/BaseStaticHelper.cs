@@ -17,7 +17,7 @@ namespace DataAccessCore.Base
     public abstract class BaseStaticHelper<T> where T : AbsConnString, new()
     {
         //Database connection strings
-        private static T connectionString = new T();
+        private static T _connString = new T();
         /// <summary>
         /// Execute a SqlCommand (that returns no resultset) against the database specified in the connection string 
         /// using the provided parameters.
@@ -134,13 +134,13 @@ namespace DataAccessCore.Base
         /// <param name="cmdParms">SqlParameters to use in the command</param>
         private static void PrepareCommand(SqlCommand cmd, SqlConnection conn, SqlTransaction trans, CommandType cmdType, string cmdText, IDbDataParameter[] cmdParms)
         {
-            conn.ConnectionString = connectionString.ConnectionString;
+            conn.ConnectionString = _connString.ConnectionString;
 
             if (conn.State != ConnectionState.Open)
                 conn.Open();
             cmd.Connection = conn;
             cmd.CommandText = cmdText;
-            cmd.CommandTimeout = connectionString.TimeOut;
+            cmd.CommandTimeout = _connString.TimeOut;
 
             if (trans != null)
                 cmd.Transaction = trans;

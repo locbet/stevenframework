@@ -15,7 +15,7 @@ namespace DataAccessCore.Base
     /// </summary>
     public class BaseHelper : IDisposable
     {
-        private int _timeout = 30;
+        private AbsConnString _connString;
         private IDbConnection _dbconnection;
         /// <summary>
         /// 实现构造函数
@@ -23,13 +23,13 @@ namespace DataAccessCore.Base
         /// <param name="conn">必须是集成自AbsConnString的类</param>
         public BaseHelper(AbsConnString conn)
         {
-            _timeout = conn.TimeOut;
-            _dbconnection = new SqlConnection(conn.ConnectionString);
+            _connString = conn;
+            _dbconnection = new SqlConnection(_connString.ConnectionString);
         }
         private IDbCommand CreateCommand()
         {
             IDbCommand cmd = _dbconnection.CreateCommand();
-            cmd.CommandTimeout = _timeout;
+            cmd.CommandTimeout = _connString.TimeOut;
             return cmd;
         }
         private void PrepareCommand(IDbCommand cmd, IDbTransaction trans, CommandType cmdType, string cmdText, IDbDataParameter[] cmdParms)
